@@ -1,12 +1,16 @@
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as schema from './schema.ts';
 
 declare global {
   var _postgresPool: Pool | undefined;
+  var _drizzleDb: NodePgDatabase<typeof schema> | undefined;
 }
 
-export function isDatabaseConfigured(): boolean {
+export function isSqlDatabaseConfigured(): boolean {
+  if (process.env.USE_SUPABASE_DB === 'true') {
+    return false;
+  }
   return Boolean(
     process.env.DATABASE_URL ||
       process.env.POSTGRES_URL ||
@@ -14,6 +18,9 @@ export function isDatabaseConfigured(): boolean {
       process.env.SQL_HOST
   );
 }
+
+// Alias dipertahankan agar kompatibel dengan modul yang memeriksa SQL config
+export const isDatabaseConfigured = isSqlDatabaseConfigured;
 
 function getPoolConfig() {
   const connectionString = (
@@ -58,6 +65,17 @@ export const createPool = () => {
   return global._postgresPool;
 };
 
-const pool = createPool();
+export function getSqlDb(): NodePgDatabase<typeof schema> {
+  if (!global._drizzleDb) {
+    global._drizzleDb = drizzle(createPool(), { schema });
+  }
+  return global._drizzleDb;
+}
 
-export const db = drizzle(pool, { schema });
+export const db = new Proxy({} as NodePgDatabase<typeof schema>, {
+  get(_target, prop, receiver) {
+    const instance = getSqlDb();
+    const value = Reflect.get(instance, prop, receiver);
+    return typeof value === 'function' ? value.bind(instance) : value;
+  },
+});

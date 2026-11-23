@@ -1,5 +1,6 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { and, desc, eq, inArray } from 'drizzle-orm';
-import { db } from './index.ts';
+import { db, isSqlDatabaseConfigured } from './index.ts';
 import {
   dailyReviews,
   profiles,
@@ -7,6 +8,25 @@ import {
   trades,
   tradingAccounts,
 } from './schema.ts';
+import {
+  sbCreateTradeScreenshot,
+  sbCreateUserAccount,
+  sbCreateUserReview,
+  sbCreateUserTrade,
+  sbDeleteTradeScreenshot,
+  sbDeleteUserAccount,
+  sbDeleteUserReview,
+  sbDeleteUserTrade,
+  sbGetTradeScreenshots,
+  sbGetUserAccounts,
+  sbGetUserProfile,
+  sbGetUserReviews,
+  sbGetUserTrades,
+  sbUpdateUserAccount,
+  sbUpdateUserProfile,
+  sbUpdateUserReview,
+  sbUpdateUserTrade,
+} from './supabase-repository.ts';
 
 export interface TradePayload {
   accountId: number;
@@ -57,7 +77,17 @@ export interface ScreenshotPayload {
   caption: string;
 }
 
-export async function getUserProfile(uid: string) {
+function requireSupabaseClient(supabase?: SupabaseClient): SupabaseClient {
+  if (!supabase) {
+    throw new Error('Client Supabase tidak tersedia.');
+  }
+  return supabase;
+}
+
+export async function getUserProfile(uid: string, supabase?: SupabaseClient) {
+  if (!isSqlDatabaseConfigured()) {
+    return sbGetUserProfile(requireSupabaseClient(supabase), uid);
+  }
   try {
     const rows = await db
       .select()
@@ -73,8 +103,12 @@ export async function getUserProfile(uid: string) {
 
 export async function updateUserProfile(
   uid: string,
-  data: { fullName: string; traderStyle: string }
+  data: { fullName: string; traderStyle: string },
+  supabase?: SupabaseClient
 ) {
+  if (!isSqlDatabaseConfigured()) {
+    return sbUpdateUserProfile(requireSupabaseClient(supabase), uid, data);
+  }
   try {
     const rows = await db
       .update(profiles)
@@ -92,7 +126,10 @@ export async function updateUserProfile(
   }
 }
 
-export async function getUserAccounts(uid: string) {
+export async function getUserAccounts(uid: string, supabase?: SupabaseClient) {
+  if (!isSqlDatabaseConfigured()) {
+    return sbGetUserAccounts(requireSupabaseClient(supabase), uid);
+  }
   try {
     return await db
       .select()
@@ -105,7 +142,14 @@ export async function getUserAccounts(uid: string) {
   }
 }
 
-export async function createUserAccount(uid: string, payload: AccountPayload) {
+export async function createUserAccount(
+  uid: string,
+  payload: AccountPayload,
+  supabase?: SupabaseClient
+) {
+  if (!isSqlDatabaseConfigured()) {
+    return sbCreateUserAccount(requireSupabaseClient(supabase), uid, payload);
+  }
   try {
     const rows = await db
       .insert(tradingAccounts)
@@ -128,8 +172,17 @@ export async function createUserAccount(uid: string, payload: AccountPayload) {
 export async function updateUserAccount(
   uid: string,
   accountId: number,
-  payload: AccountPayload
+  payload: AccountPayload,
+  supabase?: SupabaseClient
 ) {
+  if (!isSqlDatabaseConfigured()) {
+    return sbUpdateUserAccount(
+      requireSupabaseClient(supabase),
+      uid,
+      accountId,
+      payload
+    );
+  }
   try {
     const rows = await db
       .update(tradingAccounts)
@@ -148,7 +201,14 @@ export async function updateUserAccount(
   }
 }
 
-export async function deleteUserAccount(uid: string, accountId: number) {
+export async function deleteUserAccount(
+  uid: string,
+  accountId: number,
+  supabase?: SupabaseClient
+) {
+  if (!isSqlDatabaseConfigured()) {
+    return sbDeleteUserAccount(requireSupabaseClient(supabase), uid, accountId);
+  }
   try {
     const allAccounts = await getUserAccounts(uid);
     if (allAccounts.length <= 1) {
@@ -168,7 +228,14 @@ export async function deleteUserAccount(uid: string, accountId: number) {
   }
 }
 
-export async function getUserTrades(uid: string, accountId?: number) {
+export async function getUserTrades(
+  uid: string,
+  accountId?: number,
+  supabase?: SupabaseClient
+) {
+  if (!isSqlDatabaseConfigured()) {
+    return sbGetUserTrades(requireSupabaseClient(supabase), uid, accountId);
+  }
   try {
     const conditions = accountId
       ? and(eq(trades.userId, uid), eq(trades.accountId, accountId))
@@ -209,7 +276,14 @@ export async function getUserTrades(uid: string, accountId?: number) {
   }
 }
 
-export async function createUserTrade(uid: string, payload: TradePayload) {
+export async function createUserTrade(
+  uid: string,
+  payload: TradePayload,
+  supabase?: SupabaseClient
+) {
+  if (!isSqlDatabaseConfigured()) {
+    return sbCreateUserTrade(requireSupabaseClient(supabase), uid, payload);
+  }
   try {
     const ownedAccounts = await db
       .select()
@@ -261,8 +335,17 @@ export async function createUserTrade(uid: string, payload: TradePayload) {
 export async function updateUserTrade(
   uid: string,
   tradeId: number,
-  payload: TradePayload
+  payload: TradePayload,
+  supabase?: SupabaseClient
 ) {
+  if (!isSqlDatabaseConfigured()) {
+    return sbUpdateUserTrade(
+      requireSupabaseClient(supabase),
+      uid,
+      tradeId,
+      payload
+    );
+  }
   try {
     const ownedAccounts = await db
       .select()
@@ -309,7 +392,14 @@ export async function updateUserTrade(
   }
 }
 
-export async function deleteUserTrade(uid: string, tradeId: number) {
+export async function deleteUserTrade(
+  uid: string,
+  tradeId: number,
+  supabase?: SupabaseClient
+) {
+  if (!isSqlDatabaseConfigured()) {
+    return sbDeleteUserTrade(requireSupabaseClient(supabase), uid, tradeId);
+  }
   try {
     const rows = await db
       .delete(trades)
@@ -322,7 +412,14 @@ export async function deleteUserTrade(uid: string, tradeId: number) {
   }
 }
 
-export async function getTradeScreenshots(uid: string, tradeId: number) {
+export async function getTradeScreenshots(
+  uid: string,
+  tradeId: number,
+  supabase?: SupabaseClient
+) {
+  if (!isSqlDatabaseConfigured()) {
+    return sbGetTradeScreenshots(requireSupabaseClient(supabase), uid, tradeId);
+  }
   try {
     return await db
       .select()
@@ -337,8 +434,12 @@ export async function getTradeScreenshots(uid: string, tradeId: number) {
 
 export async function createTradeScreenshot(
   uid: string,
-  payload: ScreenshotPayload
+  payload: ScreenshotPayload,
+  supabase?: SupabaseClient
 ) {
+  if (!isSqlDatabaseConfigured()) {
+    return sbCreateTradeScreenshot(requireSupabaseClient(supabase), uid, payload);
+  }
   try {
     const ownedTrade = await db
       .select()
@@ -373,7 +474,18 @@ export async function createTradeScreenshot(
   }
 }
 
-export async function deleteTradeScreenshot(uid: string, screenshotId: number) {
+export async function deleteTradeScreenshot(
+  uid: string,
+  screenshotId: number,
+  supabase?: SupabaseClient
+) {
+  if (!isSqlDatabaseConfigured()) {
+    return sbDeleteTradeScreenshot(
+      requireSupabaseClient(supabase),
+      uid,
+      screenshotId
+    );
+  }
   try {
     const rows = await db
       .delete(tradeScreenshots)
@@ -386,7 +498,14 @@ export async function deleteTradeScreenshot(uid: string, screenshotId: number) {
   }
 }
 
-export async function getUserReviews(uid: string, accountId?: number) {
+export async function getUserReviews(
+  uid: string,
+  accountId?: number,
+  supabase?: SupabaseClient
+) {
+  if (!isSqlDatabaseConfigured()) {
+    return sbGetUserReviews(requireSupabaseClient(supabase), uid, accountId);
+  }
   try {
     const conditions = accountId
       ? and(eq(dailyReviews.userId, uid), eq(dailyReviews.accountId, accountId))
@@ -403,7 +522,14 @@ export async function getUserReviews(uid: string, accountId?: number) {
   }
 }
 
-export async function createUserReview(uid: string, payload: ReviewPayload) {
+export async function createUserReview(
+  uid: string,
+  payload: ReviewPayload,
+  supabase?: SupabaseClient
+) {
+  if (!isSqlDatabaseConfigured()) {
+    return sbCreateUserReview(requireSupabaseClient(supabase), uid, payload);
+  }
   try {
     const ownedAccounts = await db
       .select()
@@ -439,8 +565,17 @@ export async function createUserReview(uid: string, payload: ReviewPayload) {
 export async function updateUserReview(
   uid: string,
   reviewId: number,
-  payload: ReviewPayload
+  payload: ReviewPayload,
+  supabase?: SupabaseClient
 ) {
+  if (!isSqlDatabaseConfigured()) {
+    return sbUpdateUserReview(
+      requireSupabaseClient(supabase),
+      uid,
+      reviewId,
+      payload
+    );
+  }
   try {
     const rows = await db
       .update(dailyReviews)
@@ -463,7 +598,14 @@ export async function updateUserReview(
   }
 }
 
-export async function deleteUserReview(uid: string, reviewId: number) {
+export async function deleteUserReview(
+  uid: string,
+  reviewId: number,
+  supabase?: SupabaseClient
+) {
+  if (!isSqlDatabaseConfigured()) {
+    return sbDeleteUserReview(requireSupabaseClient(supabase), uid, reviewId);
+  }
   try {
     const rows = await db
       .delete(dailyReviews)

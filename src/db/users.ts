@@ -1,13 +1,24 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { eq } from 'drizzle-orm';
-import { db } from './index.ts';
+import { getSqlDb, isSqlDatabaseConfigured } from './index.ts';
 import { profiles, tradingAccounts } from './schema.ts';
+import { ensureSupabaseUserProfileAndAccount } from './supabase-repository.ts';
 
 export async function ensureUserProfileAndAccount(
   uid: string,
   email: string,
-  displayName?: string
+  displayName?: string,
+  supabase?: SupabaseClient
 ) {
+  if (!isSqlDatabaseConfigured()) {
+    if (!supabase) {
+      throw new Error('Client Supabase tidak tersedia untuk sinkronisasi profil.');
+    }
+    return ensureSupabaseUserProfileAndAccount(supabase, uid, email, displayName);
+  }
+
   try {
+    const db = getSqlDb();
     const existingProfiles = await db
       .select()
       .from(profiles)

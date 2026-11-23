@@ -68,9 +68,10 @@ export function registerApiRoutes(app: Express) {
   app.get('/api/profile', requireAuth, async (req: AuthRequest, res) => {
     try {
       const uid = req.user!.uid;
+      const sb = req.supabaseClient;
       const [profile, accounts] = await Promise.all([
-        getUserProfile(uid),
-        getUserAccounts(uid),
+        getUserProfile(uid, sb),
+        getUserAccounts(uid, sb),
       ]);
       res.json({ profile, accounts });
     } catch (error: any) {
@@ -85,7 +86,11 @@ export function registerApiRoutes(app: Express) {
       const traderStyle = String(
         req.body.traderStyle || 'Inner Circle Trader'
       ).trim();
-      const updated = await updateUserProfile(uid, { fullName, traderStyle });
+      const updated = await updateUserProfile(
+        uid,
+        { fullName, traderStyle },
+        req.supabaseClient
+      );
       res.json(updated);
     } catch (error: any) {
       res
@@ -96,7 +101,7 @@ export function registerApiRoutes(app: Express) {
 
   app.get('/api/accounts', requireAuth, async (req: AuthRequest, res) => {
     try {
-      const accounts = await getUserAccounts(req.user!.uid);
+      const accounts = await getUserAccounts(req.user!.uid, req.supabaseClient);
       res.json(accounts);
     } catch (error: any) {
       res
@@ -120,12 +125,16 @@ export function registerApiRoutes(app: Express) {
           .json({ error: 'Nama akun dan saldo awal wajib valid.' });
       }
 
-      const account = await createUserAccount(req.user!.uid, {
-        name,
-        broker,
-        currency,
-        initialBalance,
-      });
+      const account = await createUserAccount(
+        req.user!.uid,
+        {
+          name,
+          broker,
+          currency,
+          initialBalance,
+        },
+        req.supabaseClient
+      );
       res.status(201).json(account);
     } catch (error: any) {
       res
@@ -153,12 +162,17 @@ export function registerApiRoutes(app: Express) {
         return res.status(400).json({ error: 'Data akun tidak valid.' });
       }
 
-      const updated = await updateUserAccount(req.user!.uid, accountId, {
-        name,
-        broker,
-        currency,
-        initialBalance,
-      });
+      const updated = await updateUserAccount(
+        req.user!.uid,
+        accountId,
+        {
+          name,
+          broker,
+          currency,
+          initialBalance,
+        },
+        req.supabaseClient
+      );
       if (!updated) {
         return res.status(404).json({ error: 'Akun tidak ditemukan.' });
       }
@@ -173,7 +187,11 @@ export function registerApiRoutes(app: Express) {
   app.delete('/api/accounts/:id', requireAuth, async (req: AuthRequest, res) => {
     try {
       const accountId = Number(req.params.id);
-      const deleted = await deleteUserAccount(req.user!.uid, accountId);
+      const deleted = await deleteUserAccount(
+        req.user!.uid,
+        accountId,
+        req.supabaseClient
+      );
       if (!deleted) {
         return res.status(404).json({ error: 'Akun tidak ditemukan.' });
       }
@@ -190,7 +208,11 @@ export function registerApiRoutes(app: Express) {
       const accountId = req.query.accountId
         ? Number(req.query.accountId)
         : undefined;
-      const items = await getUserTrades(req.user!.uid, accountId);
+      const items = await getUserTrades(
+        req.user!.uid,
+        accountId,
+        req.supabaseClient
+      );
       res.json(items);
     } catch (error: any) {
       res
@@ -229,31 +251,35 @@ export function registerApiRoutes(app: Express) {
           .json({ error: 'Data transaksi tidak lengkap atau tidak valid.' });
       }
 
-      const created = await createUserTrade(req.user!.uid, {
-        accountId,
-        tradeDate: String(body.tradeDate),
-        tradeTime: String(body.tradeTime || '09:00'),
-        pair: String(body.pair),
-        direction: body.direction,
-        entryPrice,
-        exitPrice:
-          exitPrice !== null && !Number.isNaN(exitPrice) ? exitPrice : null,
-        stopLoss,
-        takeProfit,
-        lotSize,
-        status: ['WIN', 'LOSS', 'BE', 'OPEN'].includes(body.status)
-          ? body.status
-          : 'OPEN',
-        grossPl: Number(body.grossPl) || 0,
-        commission: Number(body.commission) || 0,
-        swap: Number(body.swap) || 0,
-        netPl: Number(body.netPl) || 0,
-        strategy: String(body.strategy || ''),
-        session: String(body.session || 'London'),
-        emotion: String(body.emotion || 'Tenang'),
-        entryReason: String(body.entryReason || ''),
-        notes: String(body.notes || ''),
-      });
+      const created = await createUserTrade(
+        req.user!.uid,
+        {
+          accountId,
+          tradeDate: String(body.tradeDate),
+          tradeTime: String(body.tradeTime || '09:00'),
+          pair: String(body.pair),
+          direction: body.direction,
+          entryPrice,
+          exitPrice:
+            exitPrice !== null && !Number.isNaN(exitPrice) ? exitPrice : null,
+          stopLoss,
+          takeProfit,
+          lotSize,
+          status: ['WIN', 'LOSS', 'BE', 'OPEN'].includes(body.status)
+            ? body.status
+            : 'OPEN',
+          grossPl: Number(body.grossPl) || 0,
+          commission: Number(body.commission) || 0,
+          swap: Number(body.swap) || 0,
+          netPl: Number(body.netPl) || 0,
+          strategy: String(body.strategy || ''),
+          session: String(body.session || 'London'),
+          emotion: String(body.emotion || 'Tenang'),
+          entryReason: String(body.entryReason || ''),
+          notes: String(body.notes || ''),
+        },
+        req.supabaseClient
+      );
 
       res.status(201).json(created);
     } catch (error: any) {
@@ -285,33 +311,38 @@ export function registerApiRoutes(app: Express) {
           .json({ error: 'Data pembaruan transaksi tidak valid.' });
       }
 
-      const updated = await updateUserTrade(req.user!.uid, tradeId, {
-        accountId,
-        tradeDate: String(body.tradeDate),
-        tradeTime: String(body.tradeTime || '09:00'),
-        pair: String(body.pair),
-        direction: ['BUY', 'SELL'].includes(body.direction)
-          ? body.direction
-          : 'BUY',
-        entryPrice,
-        exitPrice:
-          exitPrice !== null && !Number.isNaN(exitPrice) ? exitPrice : null,
-        stopLoss,
-        takeProfit,
-        lotSize,
-        status: ['WIN', 'LOSS', 'BE', 'OPEN'].includes(body.status)
-          ? body.status
-          : 'OPEN',
-        grossPl: Number(body.grossPl) || 0,
-        commission: Number(body.commission) || 0,
-        swap: Number(body.swap) || 0,
-        netPl: Number(body.netPl) || 0,
-        strategy: String(body.strategy || ''),
-        session: String(body.session || 'London'),
-        emotion: String(body.emotion || 'Tenang'),
-        entryReason: String(body.entryReason || ''),
-        notes: String(body.notes || ''),
-      });
+      const updated = await updateUserTrade(
+        req.user!.uid,
+        tradeId,
+        {
+          accountId,
+          tradeDate: String(body.tradeDate),
+          tradeTime: String(body.tradeTime || '09:00'),
+          pair: String(body.pair),
+          direction: ['BUY', 'SELL'].includes(body.direction)
+            ? body.direction
+            : 'BUY',
+          entryPrice,
+          exitPrice:
+            exitPrice !== null && !Number.isNaN(exitPrice) ? exitPrice : null,
+          stopLoss,
+          takeProfit,
+          lotSize,
+          status: ['WIN', 'LOSS', 'BE', 'OPEN'].includes(body.status)
+            ? body.status
+            : 'OPEN',
+          grossPl: Number(body.grossPl) || 0,
+          commission: Number(body.commission) || 0,
+          swap: Number(body.swap) || 0,
+          netPl: Number(body.netPl) || 0,
+          strategy: String(body.strategy || ''),
+          session: String(body.session || 'London'),
+          emotion: String(body.emotion || 'Tenang'),
+          entryReason: String(body.entryReason || ''),
+          notes: String(body.notes || ''),
+        },
+        req.supabaseClient
+      );
 
       if (!updated) {
         return res.status(404).json({ error: 'Transaksi tidak ditemukan.' });
@@ -327,7 +358,11 @@ export function registerApiRoutes(app: Express) {
   app.delete('/api/trades/:id', requireAuth, async (req: AuthRequest, res) => {
     try {
       const tradeId = Number(req.params.id);
-      const deleted = await deleteUserTrade(req.user!.uid, tradeId);
+      const deleted = await deleteUserTrade(
+        req.user!.uid,
+        tradeId,
+        req.supabaseClient
+      );
       if (!deleted) {
         return res.status(404).json({ error: 'Transaksi tidak ditemukan.' });
       }
@@ -345,7 +380,11 @@ export function registerApiRoutes(app: Express) {
     async (req: AuthRequest, res) => {
       try {
         const tradeId = Number(req.params.id);
-        const items = await getTradeScreenshots(req.user!.uid, tradeId);
+        const items = await getTradeScreenshots(
+          req.user!.uid,
+          tradeId,
+          req.supabaseClient
+        );
         res.json(items);
       } catch (error: any) {
         res
@@ -376,14 +415,18 @@ export function registerApiRoutes(app: Express) {
           return res.status(400).json({ error: 'Ukuran gambar maksimal 5MB.' });
         }
 
-        const created = await createTradeScreenshot(req.user!.uid, {
-          tradeId,
-          stage,
-          fileName,
-          mimeType,
-          imageData,
-          caption,
-        });
+        const created = await createTradeScreenshot(
+          req.user!.uid,
+          {
+            tradeId,
+            stage,
+            fileName,
+            mimeType,
+            imageData,
+            caption,
+          },
+          req.supabaseClient
+        );
         res.status(201).json(created);
       } catch (error: any) {
         res
@@ -399,7 +442,11 @@ export function registerApiRoutes(app: Express) {
     async (req: AuthRequest, res) => {
       try {
         const screenshotId = Number(req.params.id);
-        const deleted = await deleteTradeScreenshot(req.user!.uid, screenshotId);
+        const deleted = await deleteTradeScreenshot(
+          req.user!.uid,
+          screenshotId,
+          req.supabaseClient
+        );
         if (!deleted) {
           return res.status(404).json({ error: 'Screenshot tidak ditemukan.' });
         }
@@ -417,7 +464,11 @@ export function registerApiRoutes(app: Express) {
       const accountId = req.query.accountId
         ? Number(req.query.accountId)
         : undefined;
-      const items = await getUserReviews(req.user!.uid, accountId);
+      const items = await getUserReviews(
+        req.user!.uid,
+        accountId,
+        req.supabaseClient
+      );
       res.json(items);
     } catch (error: any) {
       res
@@ -442,15 +493,19 @@ export function registerApiRoutes(app: Express) {
           .json({ error: 'Tanggal dan kondisi emosi wajib diisi.' });
       }
 
-      const created = await createUserReview(req.user!.uid, {
-        accountId,
-        reviewDate,
-        emotionalState,
-        disciplineScore,
-        mistakes: String(req.body.mistakes || ''),
-        dailyReflection: String(req.body.dailyReflection || ''),
-        progressNotes: String(req.body.progressNotes || ''),
-      });
+      const created = await createUserReview(
+        req.user!.uid,
+        {
+          accountId,
+          reviewDate,
+          emotionalState,
+          disciplineScore,
+          mistakes: String(req.body.mistakes || ''),
+          dailyReflection: String(req.body.dailyReflection || ''),
+          progressNotes: String(req.body.progressNotes || ''),
+        },
+        req.supabaseClient
+      );
       res.status(201).json(created);
     } catch (error: any) {
       res
@@ -474,15 +529,20 @@ export function registerApiRoutes(app: Express) {
         return res.status(400).json({ error: 'Data evaluasi tidak valid.' });
       }
 
-      const updated = await updateUserReview(req.user!.uid, reviewId, {
-        accountId,
-        reviewDate,
-        emotionalState,
-        disciplineScore,
-        mistakes: String(req.body.mistakes || ''),
-        dailyReflection: String(req.body.dailyReflection || ''),
-        progressNotes: String(req.body.progressNotes || ''),
-      });
+      const updated = await updateUserReview(
+        req.user!.uid,
+        reviewId,
+        {
+          accountId,
+          reviewDate,
+          emotionalState,
+          disciplineScore,
+          mistakes: String(req.body.mistakes || ''),
+          dailyReflection: String(req.body.dailyReflection || ''),
+          progressNotes: String(req.body.progressNotes || ''),
+        },
+        req.supabaseClient
+      );
       if (!updated) {
         return res.status(404).json({ error: 'Evaluasi tidak ditemukan.' });
       }
@@ -497,7 +557,11 @@ export function registerApiRoutes(app: Express) {
   app.delete('/api/reviews/:id', requireAuth, async (req: AuthRequest, res) => {
     try {
       const reviewId = Number(req.params.id);
-      const deleted = await deleteUserReview(req.user!.uid, reviewId);
+      const deleted = await deleteUserReview(
+        req.user!.uid,
+        reviewId,
+        req.supabaseClient
+      );
       if (!deleted) {
         return res.status(404).json({ error: 'Evaluasi tidak ditemukan.' });
       }

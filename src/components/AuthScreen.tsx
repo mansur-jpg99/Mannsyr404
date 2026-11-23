@@ -178,12 +178,12 @@ export function AuthScreen() {
           try {
             await supabase.from('profiles').upsert(
               {
-                id: data.user.id,
                 uid: data.user.id,
                 email: cleanEmail,
                 full_name: cleanName,
+                trader_style: 'Inner Circle Trader',
               },
-              { onConflict: 'id' }
+              { onConflict: 'uid' }
             );
           } catch {
             // Sinkronisasi profil juga dilakukan otomatis melalui /api/profile saat sesi aktif

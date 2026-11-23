@@ -1,6 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import { createClient } from '@supabase/supabase-js';
-import { isDatabaseConfigured } from '../db/index.ts';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { ensureUserProfileAndAccount } from '../db/users.ts';
 
 export interface AuthUserPayload {
@@ -11,6 +10,7 @@ export interface AuthUserPayload {
 
 export interface AuthRequest extends Request {
   user?: AuthUserPayload;
+  supabaseClient?: SupabaseClient;
 }
 
 function stripQuotes(raw: string): string {
@@ -45,27 +45,46 @@ export function normalizeServerSupabaseUrl(raw: string): string {
   }
 }
 
-function getServerSupabaseClient() {
+function getServerSupabaseConfig() {
   const rawUrl =
     process.env.VITE_SUPABASE_URL ||
     process.env.SUPABASE_URL ||
     '';
   const supabaseUrl = normalizeServerSupabaseUrl(rawUrl);
 
-  const supabaseKey = stripQuotes(
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-      process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+  const serviceRoleKey = stripQuotes(
+    process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+  );
+  const publicKey = stripQuotes(
+    process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
       process.env.SUPABASE_PUBLISHABLE_KEY ||
       process.env.VITE_SUPABASE_ANON_KEY ||
       process.env.SUPABASE_ANON_KEY ||
       ''
   );
 
+  const supabaseKey = serviceRoleKey || publicKey;
+
   if (!supabaseUrl || !supabaseKey) {
     return null;
   }
 
-  return createClient(supabaseUrl, supabaseKey, {
+  return { supabaseUrl, supabaseKey, isServiceRole: Boolean(serviceRoleKey) };
+}
+
+function createServerSupabaseClient(userToken?: string): SupabaseClient | null {
+  const cfg = getServerSupabaseConfig();
+  if (!cfg) return null;
+
+  return createClient(cfg.supabaseUrl, cfg.supabaseKey, {
+    global:
+      !cfg.isServiceRole && userToken
+        ? {
+            headers: {
+              Authorization: `Bearer ${userToken}`,
+            },
+          }
+        : undefined,
     auth: {
       persistSession: false,
       autoRefreshToken: false,
@@ -80,25 +99,26 @@ export const requireAuth = async (
 ) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Sesi tidak valid. Silakan login kembali.' });
+    return res
+      .status(401)
+      .json({ error: 'Sesi tidak valid. Silakan login kembali.' });
   }
 
-  const supabase = getServerSupabaseClient();
+  const token = authHeader.split('Bearer ')[1]?.trim();
+  if (!token) {
+    return res
+      .status(401)
+      .json({ error: 'Token sesi kosong. Silakan login kembali.' });
+  }
+
+  const supabase = createServerSupabaseClient(token);
   if (!supabase) {
     return res.status(500).json({
       error:
-        'Konfigurasi Supabase di server belum lengkap (SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY / SUPABASE_ANON_KEY).',
+        'Konfigurasi Supabase di server belum lengkap (VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY).',
     });
   }
 
-  if (!isDatabaseConfigured()) {
-    return res.status(500).json({
-      error:
-        'Konfigurasi database server belum lengkap (DATABASE_URL atau SQL_HOST).',
-    });
-  }
-
-  const token = authHeader.split('Bearer ')[1];
   let verifiedUser: AuthUserPayload;
   try {
     const { data, error } = await supabase.auth.getUser(token);
@@ -127,18 +147,21 @@ export const requireAuth = async (
   }
 
   req.user = verifiedUser;
+  req.supabaseClient = supabase;
 
   try {
     await ensureUserProfileAndAccount(
       verifiedUser.uid,
       verifiedUser.email,
-      verifiedUser.name
+      verifiedUser.name,
+      supabase
     );
     next();
   } catch (error: any) {
     console.error('Database sync error in requireAuth:', error);
     return res.status(500).json({
-      error: error?.message || 'Gagal menyinkronkan profil pengguna di database.',
+      error:
+        error?.message || 'Gagal menyinkronkan profil pengguna di database.',
     });
   }
 };
