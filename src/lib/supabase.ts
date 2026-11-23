@@ -3,8 +3,19 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 let supabaseInstance: SupabaseClient | null = null;
 let initialized = false;
 
-export function normalizeSupabaseUrl(raw: string): string {
+function stripWrappingQuotes(raw: string): string {
   const trimmed = raw.trim();
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1).trim();
+  }
+  return trimmed;
+}
+
+export function normalizeSupabaseUrl(raw: string): string {
+  const trimmed = stripWrappingQuotes(raw);
   if (!trimmed) return '';
   try {
     const parsed = new URL(trimmed);
@@ -25,11 +36,11 @@ export function normalizeSupabaseUrl(raw: string): string {
 }
 
 let runtimeUrl = normalizeSupabaseUrl(import.meta.env.VITE_SUPABASE_URL || '');
-let runtimeAnonKey = (
+let runtimeAnonKey = stripWrappingQuotes(
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-  import.meta.env.VITE_SUPABASE_ANON_KEY ||
-  ''
-).trim();
+    import.meta.env.VITE_SUPABASE_ANON_KEY ||
+    ''
+);
 
 export function getMissingSupabaseConfig(): string[] {
   const missing: string[] = [];
@@ -45,12 +56,12 @@ export function getMissingSupabaseConfig(): string[] {
 export async function initSupabaseClient(): Promise<SupabaseClient | null> {
   if (supabaseInstance) return supabaseInstance;
 
-  if (!initialized) {
-    initialized = true;
-    if (!runtimeUrl || !runtimeAnonKey) {
-      try {
-        const res = await fetch('/api/auth-config');
-        if (res.ok) {
+  if (!initialized && (!runtimeUrl || !runtimeAnonKey)) {
+    try {
+      const res = await fetch('/api/auth-config');
+      if (res.ok) {
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
           const cfg = (await res.json()) as {
             supabaseUrl?: string;
             supabaseAnonKey?: string;
@@ -59,18 +70,20 @@ export async function initSupabaseClient(): Promise<SupabaseClient | null> {
             runtimeUrl = normalizeSupabaseUrl(cfg.supabaseUrl);
           }
           if (!runtimeAnonKey && cfg.supabaseAnonKey) {
-            runtimeAnonKey = cfg.supabaseAnonKey.trim();
+            runtimeAnonKey = stripWrappingQuotes(cfg.supabaseAnonKey);
           }
         }
-      } catch {
-        // Ignore network error during config probe
       }
+    } catch {
+      // Ignore network error during config probe
     }
   }
 
   if (getMissingSupabaseConfig().length > 0) {
     return null;
   }
+
+  initialized = true;
 
   supabaseInstance = createClient(runtimeUrl, runtimeAnonKey, {
     auth: {

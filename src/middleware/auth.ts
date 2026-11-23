@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { createClient } from '@supabase/supabase-js';
+import { isDatabaseConfigured } from '../db/index.ts';
 import { ensureUserProfileAndAccount } from '../db/users.ts';
 
 export interface AuthUserPayload {
@@ -12,8 +13,19 @@ export interface AuthRequest extends Request {
   user?: AuthUserPayload;
 }
 
-export function normalizeServerSupabaseUrl(raw: string): string {
+function stripQuotes(raw: string): string {
   const trimmed = raw.trim();
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1).trim();
+  }
+  return trimmed;
+}
+
+export function normalizeServerSupabaseUrl(raw: string): string {
+  const trimmed = stripQuotes(raw);
   if (!trimmed) return '';
   try {
     const parsed = new URL(trimmed);
@@ -40,14 +52,14 @@ function getServerSupabaseClient() {
     '';
   const supabaseUrl = normalizeServerSupabaseUrl(rawUrl);
 
-  const supabaseKey = (
+  const supabaseKey = stripQuotes(
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-    process.env.SUPABASE_PUBLISHABLE_KEY ||
-    process.env.VITE_SUPABASE_ANON_KEY ||
-    process.env.SUPABASE_ANON_KEY ||
-    ''
-  ).trim();
+      process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+      process.env.SUPABASE_PUBLISHABLE_KEY ||
+      process.env.VITE_SUPABASE_ANON_KEY ||
+      process.env.SUPABASE_ANON_KEY ||
+      ''
+  );
 
   if (!supabaseUrl || !supabaseKey) {
     return null;
@@ -79,7 +91,15 @@ export const requireAuth = async (
     });
   }
 
+  if (!isDatabaseConfigured()) {
+    return res.status(500).json({
+      error:
+        'Konfigurasi database server belum lengkap (DATABASE_URL atau SQL_HOST).',
+    });
+  }
+
   const token = authHeader.split('Bearer ')[1];
+  let verifiedUser: AuthUserPayload;
   try {
     const { data, error } = await supabase.auth.getUser(token);
     if (error || !data.user) {
@@ -94,22 +114,31 @@ export const requireAuth = async (
         ? user.user_metadata.full_name
         : undefined;
 
-    req.user = {
+    verifiedUser = {
       uid: user.id,
       email: user.email || '',
       name: fullName,
     };
-
-    await ensureUserProfileAndAccount(
-      req.user.uid,
-      req.user.email,
-      req.user.name
-    );
-    next();
   } catch (error) {
     console.error('Error verifying Supabase token:', error);
-    return res.status(401).json({
-      error: 'Gagal memverifikasi sesi autentikasi.',
+    return res.status(502).json({
+      error: 'Gagal terhubung ke layanan autentikasi Supabase.',
+    });
+  }
+
+  req.user = verifiedUser;
+
+  try {
+    await ensureUserProfileAndAccount(
+      verifiedUser.uid,
+      verifiedUser.email,
+      verifiedUser.name
+    );
+    next();
+  } catch (error: any) {
+    console.error('Database sync error in requireAuth:', error);
+    return res.status(500).json({
+      error: error?.message || 'Gagal menyinkronkan profil pengguna di database.',
     });
   }
 };

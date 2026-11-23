@@ -31,11 +31,31 @@ export function AuthScreen() {
 
   useEffect(() => {
     let active = true;
-    initSupabaseClient().then(() => {
-      if (!active) return;
-      setMissingConfig(getMissingSupabaseConfig());
-      setCheckingConfig(false);
-    });
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(
+      window.location.hash.startsWith('#')
+        ? window.location.hash.slice(1)
+        : window.location.hash
+    );
+    const urlErrorDesc =
+      searchParams.get('error_description') ||
+      hashParams.get('error_description') ||
+      searchParams.get('error') ||
+      hashParams.get('error');
+    if (urlErrorDesc) {
+      setErrorMsg(translateSupabaseAuthError(urlErrorDesc));
+    }
+
+    initSupabaseClient()
+      .then(() => {
+        if (!active) return;
+        setMissingConfig(getMissingSupabaseConfig());
+      })
+      .finally(() => {
+        if (!active) return;
+        setCheckingConfig(false);
+      });
     return () => {
       active = false;
     };
@@ -69,6 +89,22 @@ export function AuthScreen() {
     }
     if (lower.includes('rate limit') || lower.includes('too many requests')) {
       return 'Terlalu banyak percobaan. Silakan tunggu beberapa saat sebelum mencoba lagi.';
+    }
+    if (
+      lower.includes('failed to fetch') ||
+      lower.includes('networkerror') ||
+      lower.includes('load failed')
+    ) {
+      return 'Gagal terhubung ke server autentikasi Supabase. Periksa koneksi internet dan Project URL Supabase.';
+    }
+    if (lower.includes('database error saving new user')) {
+      return 'Server Supabase gagal menyimpan pengguna baru. Periksa trigger/tabel database pada project Supabase Anda.';
+    }
+    if (lower.includes('signups not allowed') || lower.includes('signup is disabled')) {
+      return 'Pendaftaran akun baru saat ini dinonaktifkan pada pengaturan Supabase Auth.';
+    }
+    if (lower.includes('redirect') && lower.includes('not allowed')) {
+      return 'URL redirect belum didaftarkan di Supabase Auth (Authentication → URL Configuration → Redirect URLs).';
     }
     return message || 'Gagal memproses autentikasi Supabase. Silakan coba lagi.';
   };
@@ -120,6 +156,8 @@ export function AuthScreen() {
           email: cleanEmail,
           password,
           options: {
+            emailRedirectTo:
+              typeof window !== 'undefined' ? window.location.origin : undefined,
             data: {
               full_name: cleanName,
             },
