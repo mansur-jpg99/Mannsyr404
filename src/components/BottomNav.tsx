@@ -2,9 +2,8 @@ import {
   BarChart3,
   BookOpen,
   CalendarDays,
-  History,
   LayoutDashboard,
-  Settings,
+  LayoutGrid,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { AppPage } from '../types.ts';
@@ -20,59 +19,59 @@ const BOTTOM_NAV_ITEMS: Array<{
   icon: typeof LayoutDashboard;
 }> = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'journal', label: 'Jurnal Trading', icon: BookOpen },
-  { id: 'calendar', label: 'Kalender', icon: CalendarDays },
-  { id: 'history', label: 'Riwayat', icon: History },
+  { id: 'journal', label: 'Journal', icon: BookOpen },
+  { id: 'calendar', label: 'Calendar', icon: CalendarDays },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-  { id: 'settings', label: 'Pengaturan', icon: Settings },
+  { id: 'more', label: 'More', icon: LayoutGrid },
 ];
 
 export function BottomNav({ activePage, onSelectPage }: BottomNavProps) {
   return (
     <nav
       aria-label="Navigasi utama"
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#FFFFFF]/95 backdrop-blur-md border-t border-[#E2E8F0] rounded-t-2xl shadow-[0_-4px_20px_rgba(15,23,42,0.06)] pb-safe pt-1.5 px-1"
+      className="lg:hidden fixed bottom-2.5 left-3 right-3 z-40 max-w-md mx-auto glass-dock rounded-[26px] px-2 pt-1.5 pb-safe"
     >
-      <div className="grid grid-cols-6 items-center max-w-2xl mx-auto">
+      <div className="grid grid-cols-5 items-center gap-1">
         {BOTTOM_NAV_ITEMS.map((item) => {
           const Icon = item.icon;
-          const isActive = activePage === item.id;
+          const isMoreBranch =
+            item.id === 'more' &&
+            (activePage === 'more' ||
+              activePage === 'history' ||
+              activePage === 'settings');
+          const isActive = activePage === item.id || isMoreBranch;
+
           return (
             <motion.button
               key={item.id}
               type="button"
               whileTap={{ scale: 0.92 }}
-              transition={{ duration: 0.14, ease: 'easeInOut' }}
+              transition={{ duration: 0.14, ease: [0.16, 1, 0.3, 1] }}
               onClick={() => onSelectPage(item.id)}
               aria-current={isActive ? 'page' : undefined}
-              className="relative flex flex-col items-center justify-center min-h-[48px] px-0.5 py-1 rounded-xl cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0D9488]/40"
+              className="relative flex flex-col items-center justify-center min-h-[48px] px-1 py-1.5 rounded-[20px] cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0D7A72]/40"
             >
               {isActive && (
                 <motion.span
-                  layoutId="ios-bottom-nav-indicator"
-                  transition={{ duration: 0.24, ease: [0.25, 0.1, 0.25, 1] }}
-                  className="absolute top-0 w-6 h-[2.5px] rounded-full bg-[#0D9488]"
+                  layoutId="ios-bottom-dock-pill"
+                  transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                  className="absolute inset-0.5 rounded-[18px] bg-[#D8EFE7]/90 border border-[#0D7A72]/15"
                 />
               )}
 
-              <motion.span
-                animate={{
-                  scale: isActive ? 1.06 : 1,
-                  y: isActive ? -1 : 0,
-                }}
-                transition={{ duration: 0.22, ease: 'easeInOut' }}
-                className={`flex items-center justify-center w-5 h-5 transition-colors duration-200 ${
-                  isActive ? 'text-[#0D9488]' : 'text-[#64748B]'
+              <span
+                className={`relative z-10 flex items-center justify-center w-5 h-5 transition-colors duration-150 ${
+                  isActive ? 'text-[#0D7A72]' : 'text-[#52625D]'
                 }`}
               >
-                <Icon className="w-[19px] h-[19px]" strokeWidth={isActive ? 2.2 : 1.8} />
-              </motion.span>
+                <Icon className="w-[19px] h-[19px]" strokeWidth={isActive ? 2.25 : 1.8} />
+              </span>
 
               <span
-                className={`mt-0.5 text-[9px] sm:text-[10px] leading-tight tracking-tight whitespace-nowrap truncate max-w-full transition-colors duration-200 ${
+                className={`relative z-10 mt-0.5 text-[10px] leading-tight tracking-tight whitespace-nowrap truncate max-w-full transition-colors duration-150 ${
                   isActive
-                    ? 'font-semibold text-[#0D9488]'
-                    : 'font-medium text-[#64748B]'
+                    ? 'font-semibold text-[#0D7A72]'
+                    : 'font-medium text-[#52625D]'
                 }`}
               >
                 {item.label}

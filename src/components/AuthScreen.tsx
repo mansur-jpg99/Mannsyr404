@@ -222,74 +222,74 @@ export function AuthScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#172033] flex flex-col lg:flex-row">
+    <div className="min-h-screen sage-canvas text-[#1A2421] flex flex-col lg:flex-row">
       {/* Left Brand Showcase */}
-      <div className="lg:w-[50%] flex flex-col justify-between p-6 sm:p-10 lg:p-16 border-b lg:border-b-0 lg:border-r border-[#E2E8F0] bg-[#FFFFFF]">
+      <div className="lg:w-[50%] flex flex-col justify-between p-6 sm:p-10 lg:p-16">
         <div className="flex items-center">
           <BrandLogo size={42} subtitle="Jurnal Trading Forex" />
         </div>
 
         <div className="my-10 lg:my-0 max-w-xl">
-          <p className="text-xs font-semibold text-[#0D9488] tracking-wide mb-3">
-            Modern Minimalist Trading Journal
+          <p className="text-xs font-semibold text-[#0D7A72] tracking-wide mb-3">
+            Soft Glassmorphism Trading Journal
           </p>
-          <h1 className="text-2xl sm:text-4xl font-semibold leading-[1.18] tracking-tight text-[#172033] [text-wrap:balance] mb-5">
+          <h1 className="text-2xl sm:text-4xl font-bold leading-[1.18] tracking-tight text-[#1A2421] [text-wrap:balance] mb-5">
             Disiplin eksekusi, evaluasi terstruktur, dan analitik performa yang presisi.
           </h1>
-          <p className="text-sm sm:text-base text-[#64748B] leading-relaxed mb-10">
+          <p className="text-sm sm:text-base text-[#52625D] leading-relaxed mb-10">
             Catat setiap transaksi Forex lengkap dengan harga entry, stop loss, take profit,
             komisi, swap, psikologi trading, serta arsip screenshot chart dalam ruang kerja
-            pribadi yang bersih dan terisolasi.
+            pribadi yang tenang dan bersih.
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-8 border-t border-[#E2E8F0]">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-8 border-t border-[#1A2421]/10">
             <div>
-              <div className="text-base font-mono font-semibold text-[#172033] tabular-nums">
+              <div className="text-base font-mono font-bold text-[#1A2421] tabular-nums">
                 IDR · USD · USC
               </div>
-              <div className="text-xs text-[#64748B] mt-1">
+              <div className="text-xs text-[#52625D] mt-1">
                 Multi-akun &amp; kalkulasi saldo otomatis
               </div>
             </div>
             <div>
-              <div className="text-base font-mono font-semibold text-[#0D9488] tabular-nums">
+              <div className="text-base font-mono font-bold text-[#0D7A72] tabular-nums">
                 3 Tahap Chart
               </div>
-              <div className="text-xs text-[#64748B] mt-1">
+              <div className="text-xs text-[#52625D] mt-1">
                 Arsip screenshot privat per transaksi
               </div>
             </div>
             <div>
-              <div className="text-base font-mono font-semibold text-[#172033] tabular-nums">
+              <div className="text-base font-mono font-bold text-[#1A2421] tabular-nums">
                 Analitik Penuh
               </div>
-              <div className="text-xs text-[#64748B] mt-1">
+              <div className="text-xs text-[#52625D] mt-1">
                 Expectancy, Profit Factor &amp; Drawdown
               </div>
             </div>
           </div>
         </div>
 
-        <div className="text-xs text-[#64748B]">
+        <div className="text-xs text-[#52625D]">
           MANSYR404 · Data terenkripsi dan terpisah per akun pengguna
         </div>
       </div>
 
       {/* Right Authentication Form Column */}
-      <div className="flex-1 flex items-center justify-center p-6 sm:p-10 lg:p-16">
-        <div className="w-full max-w-md bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl p-6 sm:p-8 shadow-xs">
+      <div className="flex-1 flex items-center justify-center p-5 sm:p-10 lg:p-16">
+        <div className="w-full max-w-md glass-card rounded-[28px] p-6 sm:p-8">
           <div className="mb-6">
-            <h2 className="text-xl font-semibold text-[#172033]">
+            <h2 className="text-xl font-bold text-[#1A2421]">
               {mode === 'login' ? 'Masuk ke Ruang Kerja' : 'Buat Akun Trader'}
             </h2>
-            <p className="text-sm text-[#64748B] mt-1">
+            <p className="text-sm text-[#52625D] mt-1">
               {mode === 'login'
                 ? 'Akses jurnal, analitik, dan evaluasi trading Anda.'
                 : 'Daftarkan akun pribadi menggunakan Supabase Authentication.'}
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-1 p-1 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg mb-6">
+          <div className="grid grid-cols-2 gap-1 p-1 glass-segmented rounded-2xl mb-6">
             <button
               type="button"
               onClick={() => {
@@ -297,10 +297,10 @@ export function AuthScreen() {
                 setErrorMsg('');
                 setSuccessMsg('');
               }}
-              className={`py-2 text-xs font-semibold rounded-md transition-colors cursor-pointer whitespace-nowrap ${
+              className={`min-h-[40px] py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer whitespace-nowrap ${
                 mode === 'login'
-                  ? 'bg-[#FFFFFF] text-[#172033] shadow-2xs border border-[#E2E8F0]'
-                  : 'text-[#64748B] hover:text-[#172033]'
+                  ? 'bg-white text-[#0D7A72] shadow-2xs'
+                  : 'text-[#52625D] hover:text-[#1A2421]'
               }`}
             >
               Login
@@ -312,10 +312,10 @@ export function AuthScreen() {
                 setErrorMsg('');
                 setSuccessMsg('');
               }}
-              className={`py-2 text-xs font-semibold rounded-md transition-colors cursor-pointer whitespace-nowrap ${
+              className={`min-h-[40px] py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer whitespace-nowrap ${
                 mode === 'register'
-                  ? 'bg-[#FFFFFF] text-[#172033] shadow-2xs border border-[#E2E8F0]'
-                  : 'text-[#64748B] hover:text-[#172033]'
+                  ? 'bg-white text-[#0D7A72] shadow-2xs'
+                  : 'text-[#52625D] hover:text-[#1A2421]'
               }`}
             >
               Buat Akun
@@ -323,7 +323,7 @@ export function AuthScreen() {
           </div>
 
           {!checkingConfig && missingConfig.length > 0 && (
-            <div className="mb-5 p-3.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800 leading-relaxed flex items-start gap-2.5">
+            <div className="mb-5 p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200 text-xs text-amber-800 leading-relaxed flex items-start gap-2.5">
               <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
               <div>
                 <div className="font-semibold text-amber-900">
@@ -343,7 +343,7 @@ export function AuthScreen() {
           {errorMsg && (
             <div
               role="alert"
-              className="mb-5 p-3.5 rounded-lg bg-red-50 border border-red-200 text-xs text-[#DC2626] leading-relaxed font-medium"
+              className="mb-5 p-3.5 rounded-2xl bg-[#DC2626]/10 border border-[#DC2626]/20 text-xs text-[#B91C1C] leading-relaxed font-medium"
             >
               {errorMsg}
             </div>
@@ -352,9 +352,9 @@ export function AuthScreen() {
           {successMsg && (
             <div
               role="status"
-              className="mb-5 p-3.5 rounded-lg bg-green-50 border border-green-200 text-xs text-[#16A34A] leading-relaxed font-medium flex items-start gap-2"
+              className="mb-5 p-3.5 rounded-2xl bg-[#16A34A]/12 border border-[#16A34A]/25 text-xs text-[#15803D] leading-relaxed font-medium flex items-start gap-2"
             >
-              <CheckCircle2 className="w-4 h-4 text-[#16A34A] shrink-0 mt-0.5" />
+              <CheckCircle2 className="w-4 h-4 text-[#15803D] shrink-0 mt-0.5" />
               <span>{successMsg}</span>
             </div>
           )}
@@ -364,12 +364,12 @@ export function AuthScreen() {
               <div>
                 <label
                   htmlFor="auth-fullname"
-                  className="block text-xs font-medium text-[#172033] mb-1.5"
+                  className="block text-xs font-medium text-[#1A2421] mb-1.5"
                 >
                   Nama Lengkap
                 </label>
                 <div className="relative">
-                  <User className="w-4 h-4 text-[#64748B] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <User className="w-4 h-4 text-[#52625D] absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     id="auth-fullname"
                     type="text"
@@ -377,7 +377,7 @@ export function AuthScreen() {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Contoh: Andi Pratama"
-                    className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg pl-10 pr-3.5 py-2.5 text-sm text-[#172033] placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#0D9488] transition-colors"
+                    className="w-full min-h-[44px] glass-input rounded-2xl pl-10 pr-3.5 py-2.5 text-sm placeholder:text-[#6B7C76]"
                   />
                 </div>
               </div>
@@ -386,12 +386,12 @@ export function AuthScreen() {
             <div>
               <label
                 htmlFor="auth-email"
-                className="block text-xs font-medium text-[#172033] mb-1.5"
+                className="block text-xs font-medium text-[#1A2421] mb-1.5"
               >
                 Email
               </label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-[#64748B] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Mail className="w-4 h-4 text-[#52625D] absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   id="auth-email"
                   type="email"
@@ -399,7 +399,7 @@ export function AuthScreen() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="nama@email.com"
-                  className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg pl-10 pr-3.5 py-2.5 text-sm text-[#172033] placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#0D9488] transition-colors"
+                  className="w-full min-h-[44px] glass-input rounded-2xl pl-10 pr-3.5 py-2.5 text-sm placeholder:text-[#6B7C76]"
                 />
               </div>
             </div>
@@ -407,12 +407,12 @@ export function AuthScreen() {
             <div>
               <label
                 htmlFor="auth-password"
-                className="block text-xs font-medium text-[#172033] mb-1.5"
+                className="block text-xs font-medium text-[#1A2421] mb-1.5"
               >
                 Password
               </label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-[#64748B] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Lock className="w-4 h-4 text-[#52625D] absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   id="auth-password"
                   type={showPassword ? 'text' : 'password'}
@@ -420,12 +420,12 @@ export function AuthScreen() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Minimal 6 karakter"
-                  className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg pl-10 pr-10 py-2.5 text-sm text-[#172033] placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#0D9488] transition-colors"
+                  className="w-full min-h-[44px] glass-input rounded-2xl pl-10 pr-10 py-2.5 text-sm placeholder:text-[#6B7C76]"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748B] hover:text-[#172033] p-1 cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#52625D] hover:text-[#1A2421] p-1 cursor-pointer"
                   aria-label={
                     showPassword ? 'Sembunyikan password' : 'Tampilkan password'
                   }
@@ -443,12 +443,12 @@ export function AuthScreen() {
               <div>
                 <label
                   htmlFor="auth-confirm-password"
-                  className="block text-xs font-medium text-[#172033] mb-1.5"
+                  className="block text-xs font-medium text-[#1A2421] mb-1.5"
                 >
                   Konfirmasi Password
                 </label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-[#64748B] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Lock className="w-4 h-4 text-[#52625D] absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     id="auth-confirm-password"
                     type={showConfirmPassword ? 'text' : 'password'}
@@ -456,12 +456,12 @@ export function AuthScreen() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Ulangi password Anda"
-                    className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg pl-10 pr-10 py-2.5 text-sm text-[#172033] placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#0D9488] transition-colors"
+                    className="w-full min-h-[44px] glass-input rounded-2xl pl-10 pr-10 py-2.5 text-sm placeholder:text-[#6B7C76]"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword((prev) => !prev)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748B] hover:text-[#172033] p-1 cursor-pointer"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#52625D] hover:text-[#1A2421] p-1 cursor-pointer"
                     aria-label={
                       showConfirmPassword
                         ? 'Sembunyikan konfirmasi password'
@@ -481,7 +481,7 @@ export function AuthScreen() {
             <button
               type="submit"
               disabled={loading || checkingConfig}
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-[#0D9488] hover:bg-[#0F766E] disabled:opacity-50 text-white font-semibold text-sm transition-colors cursor-pointer"
+              className="w-full min-h-[46px] flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-[#0D7A72] hover:bg-[#095E58] disabled:opacity-50 text-white font-semibold text-sm transition-all cursor-pointer active:scale-[0.99]"
             >
               <span>
                 {loading

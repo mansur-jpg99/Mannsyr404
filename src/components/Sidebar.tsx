@@ -23,6 +23,7 @@ interface SidebarProps {
   accounts: TradingAccount[];
   activeAccount: TradingAccount | null;
   onSelectAccount: (accountId: number) => void;
+  onOpenAccountModal: () => void;
   profile: Profile | null;
   userEmail: string;
   onSignOut: () => void;
@@ -32,8 +33,8 @@ const NAV_ITEMS: Array<{ id: AppPage; label: string; icon: typeof LayoutDashboar
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'journal', label: 'Jurnal Trading', icon: BookOpen },
   { id: 'calendar', label: 'Kalender', icon: CalendarDays },
-  { id: 'history', label: 'Riwayat', icon: History },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+  { id: 'history', label: 'Riwayat', icon: History },
   { id: 'settings', label: 'Pengaturan', icon: Settings },
 ];
 
@@ -54,28 +55,38 @@ export function Sidebar({
   accounts,
   activeAccount,
   onSelectAccount,
+  onOpenAccountModal,
   profile,
   userEmail,
   onSignOut,
 }: SidebarProps) {
+  const displayName = profile?.fullName || userEmail.split('@')[0] || 'Trader';
+  const initials = displayName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0])
+    .join('')
+    .toUpperCase();
+
   return (
-    <aside className="hidden lg:block shrink-0 h-screen sticky top-0">
-      <div className="flex flex-col h-full w-64 bg-[#FFFFFF] border-r border-[#E2E8F0]">
+    <aside className="hidden lg:block shrink-0 h-screen sticky top-0 p-3 pr-0">
+      <div className="flex flex-col h-full w-64 glass-card rounded-[26px] overflow-hidden">
         {/* Brand Header */}
-        <div className="flex items-center px-5 h-16 border-b border-[#E2E8F0] shrink-0">
+        <div className="flex items-center px-5 h-16 border-b border-[#1A2421]/8 shrink-0">
           <BrandLogo size={34} subtitle="Jurnal Trading Forex" />
         </div>
 
         {/* Account Selector */}
-        <div className="px-4 py-4 border-b border-[#E2E8F0]">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-medium text-[#64748B]">
+        <div className="px-4 py-4 border-b border-[#1A2421]/8">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-medium text-[#52625D]">
               Akun Trading Aktif
             </span>
             <button
               type="button"
-              onClick={() => onSelectPage('settings')}
-              className="text-[11px] font-medium text-[#0D9488] hover:text-[#0F766E] flex items-center gap-1 cursor-pointer"
+              onClick={onOpenAccountModal}
+              className="text-[11px] font-semibold text-[#0D7A72] hover:text-[#095E58] flex items-center gap-1 cursor-pointer"
             >
               <Settings className="w-3 h-3" />
               <span>Kelola</span>
@@ -86,7 +97,7 @@ export function Sidebar({
             <select
               value={activeAccount?.id || ''}
               onChange={(e) => onSelectAccount(Number(e.target.value))}
-              className="w-full appearance-none bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg pl-3 pr-8 py-2 text-xs font-medium text-[#172033] focus:outline-none focus:border-[#0D9488] cursor-pointer"
+              className="w-full appearance-none glass-input rounded-2xl pl-3.5 pr-8 py-2.5 text-xs font-semibold cursor-pointer"
             >
               {accounts.map((acc) => (
                 <option key={acc.id} value={acc.id}>
@@ -94,13 +105,13 @@ export function Sidebar({
                 </option>
               ))}
             </select>
-            <ChevronDown className="w-3.5 h-3.5 text-[#64748B] pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2" />
+            <ChevronDown className="w-3.5 h-3.5 text-[#52625D] pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" />
           </div>
 
           {activeAccount && (
-            <div className="mt-2.5 flex items-center justify-between text-[11px] text-[#64748B]">
+            <div className="mt-2.5 flex items-center justify-between text-[11px] text-[#52625D]">
               <span>Modal Awal</span>
-              <span className="font-mono font-medium tabular-nums text-[#172033]">
+              <span className="font-mono font-semibold tabular-nums text-[#1A2421]">
                 {formatCurrency(activeAccount.initialBalance, activeAccount.currency)}
               </span>
             </div>
@@ -119,22 +130,22 @@ export function Sidebar({
                   whileTap={{ scale: 0.98 }}
                   transition={{ duration: 0.14 }}
                   onClick={() => onSelectPage(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 cursor-pointer whitespace-nowrap ${
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition-all duration-150 cursor-pointer whitespace-nowrap ${
                     isActive
-                      ? 'bg-[#0D9488]/10 text-[#0D9488] border border-[#0D9488]/20'
-                      : 'text-[#64748B] hover:text-[#172033] hover:bg-[#F8FAFC] border border-transparent'
+                      ? 'bg-[#D8EFE7] text-[#0D7A72] font-semibold shadow-2xs'
+                      : 'text-[#52625D] hover:text-[#1A2421] hover:bg-white/55'
                   }`}
                 >
                   <Icon
-                    className={`w-4 h-4 shrink-0 transition-colors duration-200 ${
-                      isActive ? 'text-[#0D9488]' : 'text-[#64748B]'
+                    className={`w-4 h-4 shrink-0 ${
+                      isActive ? 'text-[#0D7A72]' : 'text-[#52625D]'
                     }`}
                   />
                   <span className="truncate">{item.label}</span>
                 </motion.button>
 
                 {item.id === 'history' && activePage === 'history' && (
-                  <div className="mt-1 ml-4 pl-3 border-l border-[#E2E8F0] space-y-0.5">
+                  <div className="mt-1.5 ml-4 pl-3 border-l border-[#1A2421]/10 space-y-1">
                     {HISTORY_SUB_ITEMS.map((sub) => {
                       const SubIcon = sub.icon;
                       const isSubActive = historyTab === sub.id;
@@ -143,10 +154,10 @@ export function Sidebar({
                           key={sub.id}
                           type="button"
                           onClick={() => onSelectPage('history', sub.id)}
-                          className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer whitespace-nowrap ${
+                          className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors cursor-pointer whitespace-nowrap ${
                             isSubActive
-                              ? 'text-[#0D9488] bg-[#0D9488]/8'
-                              : 'text-[#64748B] hover:text-[#172033] hover:bg-[#F8FAFC]'
+                              ? 'text-[#0D7A72] bg-[#D8EFE7]/75 font-semibold'
+                              : 'text-[#52625D] hover:text-[#1A2421] hover:bg-white/45'
                           }`}
                         >
                           <SubIcon className="w-3.5 h-3.5 shrink-0" />
@@ -162,26 +173,36 @@ export function Sidebar({
         </nav>
 
         {/* Trader Profile & Sign Out */}
-        <div className="p-4 border-t border-[#E2E8F0] space-y-3 bg-[#F8FAFC]/60">
-          <div className="min-w-0">
-            <div className="text-xs font-semibold text-[#172033] truncate">
-              {profile?.fullName || userEmail.split('@')[0] || 'Trader'}
+        <div className="p-4 border-t border-[#1A2421]/8 space-y-3 bg-white/30">
+          <button
+            type="button"
+            onClick={() => onSelectPage('settings')}
+            className="w-full flex items-center gap-2.5 text-left rounded-xl hover:bg-white/40 p-1 -m-1 transition-colors cursor-pointer"
+          >
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#0D7A72] to-[#14B8A6] text-white text-xs font-bold flex items-center justify-center shrink-0">
+              {initials || 'TR'}
             </div>
-            <div className="text-[11px] text-[#64748B] truncate">{userEmail}</div>
-          </div>
+            <div className="min-w-0">
+              <div className="text-xs font-semibold text-[#1A2421] truncate">
+                {displayName}
+              </div>
+              <div className="text-[11px] text-[#52625D] truncate">{userEmail}</div>
+            </div>
+          </button>
+
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => onSelectPage('settings')}
-              className="flex-1 py-2 px-3 rounded-lg bg-[#FFFFFF] hover:bg-[#F1F5F9] border border-[#E2E8F0] text-xs font-medium text-[#172033] flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-[0.98] transition-transform"
+              onClick={onOpenAccountModal}
+              className="flex-1 py-2 px-3 rounded-xl bg-white/75 hover:bg-white border border-white/80 text-xs font-medium text-[#1A2421] flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-[0.98] transition-all"
             >
-              <Plus className="w-3.5 h-3.5 text-[#0D9488]" />
+              <Plus className="w-3.5 h-3.5 text-[#0D7A72]" />
               <span>Akun Baru</span>
             </button>
             <button
               type="button"
               onClick={onSignOut}
-              className="py-2 px-3 rounded-lg bg-[#FFFFFF] hover:bg-red-50 border border-[#E2E8F0] hover:border-red-200 text-xs font-medium text-[#64748B] hover:text-[#DC2626] flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap transition-colors active:scale-[0.98]"
+              className="py-2 px-3 rounded-xl bg-white/75 hover:bg-[#DC2626]/10 border border-white/80 hover:border-[#DC2626]/20 text-xs font-medium text-[#52625D] hover:text-[#B91C1C] flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap transition-colors active:scale-[0.98]"
               title="Keluar dari akun"
             >
               <LogOut className="w-3.5 h-3.5" />

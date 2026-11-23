@@ -142,59 +142,69 @@ export function AccountModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#172033]/40 backdrop-blur-xs">
-      <div className="w-full max-w-2xl bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl overflow-hidden max-h-[90vh] flex flex-col shadow-xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E2E8F0]">
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#1A2421]/35 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-2xl glass-dock rounded-t-[28px] sm:rounded-[28px] overflow-hidden max-h-[90vh] flex flex-col"
+      >
+        <div className="sm:hidden pt-2.5 flex justify-center">
+          <div className="w-10 h-1 rounded-full bg-[#1A2421]/18" />
+        </div>
+
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1A2421]/8">
           <div>
-            <h3 className="text-base font-semibold text-[#172033]">
+            <h3 className="text-base font-bold text-[#1A2421]">
               Pengaturan Akun Trading &amp; Profil
             </h3>
-            <p className="text-xs text-[#64748B] mt-0.5">
+            <p className="text-xs text-[#52625D] mt-0.5">
               Atur mata uang (IDR, USD, USC), modal awal, dan preferensi trader.
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-lg text-[#64748B] hover:text-[#172033] hover:bg-[#F1F5F9] cursor-pointer"
+            className="min-h-[38px] min-w-[38px] flex items-center justify-center rounded-2xl text-[#52625D] hover:text-[#1A2421] hover:bg-white/75 cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="px-6 pt-4 flex gap-4 border-b border-[#E2E8F0]">
+        <div className="px-6 pt-3 pb-1 flex gap-2">
           <button
             type="button"
             onClick={() => setTab('accounts')}
-            className={`pb-3 px-1 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
+            className={`min-h-[38px] px-4 py-1.5 rounded-2xl text-xs font-semibold transition-all cursor-pointer ${
               tab === 'accounts'
-                ? 'border-[#0D9488] text-[#0D9488]'
-                : 'border-transparent text-[#64748B] hover:text-[#172033]'
+                ? 'bg-[#D8EFE7] text-[#0D7A72]'
+                : 'text-[#52625D] hover:text-[#1A2421]'
             }`}
           >
-            Daftar Akun Trading ({accounts.length})
+            Daftar Akun ({accounts.length})
           </button>
           <button
             type="button"
             onClick={() => setTab('profile')}
-            className={`pb-3 px-1 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
+            className={`min-h-[38px] px-4 py-1.5 rounded-2xl text-xs font-semibold transition-all cursor-pointer ${
               tab === 'profile'
-                ? 'border-[#0D9488] text-[#0D9488]'
-                : 'border-transparent text-[#64748B] hover:text-[#172033]'
+                ? 'bg-[#D8EFE7] text-[#0D7A72]'
+                : 'text-[#52625D] hover:text-[#1A2421]'
             }`}
           >
             Profil &amp; Preferensi
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto space-y-6">
+        <div className="p-6 overflow-y-auto space-y-5 pb-safe">
           {errorMsg && (
-            <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-[#DC2626] font-medium">
+            <div className="p-3 rounded-2xl bg-[#DC2626]/10 border border-[#DC2626]/20 text-xs text-[#B91C1C] font-medium">
               {errorMsg}
             </div>
           )}
           {successMsg && (
-            <div className="p-3 rounded-lg bg-green-50 border border-green-200 text-xs text-[#16A34A] font-medium flex items-center gap-2">
+            <div className="p-3 rounded-2xl bg-[#16A34A]/12 border border-[#16A34A]/25 text-xs text-[#15803D] font-medium flex items-center gap-2">
               <Check className="w-4 h-4 shrink-0" />
               <span>{successMsg}</span>
             </div>
@@ -206,18 +216,18 @@ export function AccountModal({
                 {accounts.map((acc) => (
                   <div
                     key={acc.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-white/60 border border-white/80"
                   >
                     <div>
-                      <div className="flex items-center gap-2 text-sm font-semibold text-[#172033]">
+                      <div className="flex items-center gap-2 text-sm font-bold text-[#1A2421]">
                         <span>{acc.name}</span>
-                        <span className="text-xs font-mono text-[#0D9488]">
+                        <span className="text-xs font-mono text-[#0D7A72]">
                           {acc.currency}
                         </span>
                       </div>
-                      <div className="text-xs text-[#64748B] mt-0.5">
+                      <div className="text-xs text-[#52625D] mt-0.5">
                         {acc.broker || 'Broker belum diisi'} · Modal Awal:{' '}
-                        <span className="font-mono font-medium tabular-nums text-[#172033]">
+                        <span className="font-mono font-medium tabular-nums text-[#1A2421]">
                           {formatCurrency(acc.initialBalance, acc.currency)}
                         </span>
                       </div>
@@ -227,7 +237,7 @@ export function AccountModal({
                       <button
                         type="button"
                         onClick={() => startEdit(acc)}
-                        className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] hover:bg-[#F1F5F9] border border-[#E2E8F0] text-xs font-medium text-[#172033] cursor-pointer"
+                        className="min-h-[36px] px-3.5 py-1.5 rounded-2xl bg-white/85 hover:bg-white border border-white/90 text-xs font-medium text-[#1A2421] cursor-pointer"
                       >
                         Ubah
                       </button>
@@ -238,14 +248,14 @@ export function AccountModal({
                               type="button"
                               onClick={() => handleDeleteAccount(acc.id)}
                               disabled={saving}
-                              className="px-2.5 py-1.5 rounded-lg bg-red-50 border border-red-200 text-[#DC2626] text-xs font-semibold hover:bg-red-100 cursor-pointer"
+                              className="min-h-[36px] px-3 py-1.5 rounded-2xl bg-[#DC2626] text-white text-xs font-semibold cursor-pointer"
                             >
                               Konfirmasi Hapus
                             </button>
                             <button
                               type="button"
                               onClick={() => setConfirmDeleteId(null)}
-                              className="px-2 py-1.5 rounded-lg text-xs text-[#64748B] hover:text-[#172033] cursor-pointer"
+                              className="min-h-[36px] px-2.5 py-1.5 rounded-2xl text-xs text-[#52625D] hover:text-[#1A2421] cursor-pointer"
                             >
                               Batal
                             </button>
@@ -254,7 +264,7 @@ export function AccountModal({
                           <button
                             type="button"
                             onClick={() => setConfirmDeleteId(acc.id)}
-                            className="p-1.5 rounded-lg text-[#64748B] hover:text-[#DC2626] hover:bg-red-50 cursor-pointer"
+                            className="p-2 rounded-2xl text-[#52625D] hover:text-[#B91C1C] hover:bg-[#DC2626]/10 cursor-pointer"
                             title="Hapus akun"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -267,17 +277,17 @@ export function AccountModal({
 
               <form
                 onSubmit={handleSaveAccount}
-                className="p-4 sm:p-5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-4"
+                className="p-4 sm:p-5 rounded-2xl bg-white/55 border border-white/80 space-y-4"
               >
                 <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-[#172033]">
+                  <h4 className="text-sm font-bold text-[#1A2421]">
                     {editingId ? 'Ubah Akun Trading' : 'Tambah Akun Trading Baru'}
                   </h4>
                   {editingId && (
                     <button
                       type="button"
                       onClick={resetForm}
-                      className="text-xs text-[#64748B] hover:text-[#172033] cursor-pointer"
+                      className="text-xs text-[#52625D] hover:text-[#1A2421] cursor-pointer"
                     >
                       Batal Ubah
                     </button>
@@ -286,7 +296,7 @@ export function AccountModal({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-medium text-[#172033] mb-1.5">
+                    <label className="block text-xs font-medium text-[#1A2421] mb-1.5">
                       Nama Akun
                     </label>
                     <input
@@ -295,11 +305,11 @@ export function AccountModal({
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Contoh: Akun Live Utama"
-                      className="w-full bg-[#FFFFFF] border border-[#E2E8F0] rounded-lg px-3 py-2 text-sm text-[#172033] focus:outline-none focus:border-[#0D9488]"
+                      className="w-full min-h-[42px] glass-input rounded-2xl px-3.5 py-2 text-sm"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-[#172033] mb-1.5">
+                    <label className="block text-xs font-medium text-[#1A2421] mb-1.5">
                       Nama Broker
                     </label>
                     <input
@@ -307,17 +317,17 @@ export function AccountModal({
                       value={broker}
                       onChange={(e) => setBroker(e.target.value)}
                       placeholder="Contoh: Exness / ICMarkets"
-                      className="w-full bg-[#FFFFFF] border border-[#E2E8F0] rounded-lg px-3 py-2 text-sm text-[#172033] focus:outline-none focus:border-[#0D9488]"
+                      className="w-full min-h-[42px] glass-input rounded-2xl px-3.5 py-2 text-sm"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-[#172033] mb-1.5">
+                    <label className="block text-xs font-medium text-[#1A2421] mb-1.5">
                       Mata Uang Akun
                     </label>
                     <select
                       value={currency}
                       onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
-                      className="w-full bg-[#FFFFFF] border border-[#E2E8F0] rounded-lg px-3 py-2 text-sm text-[#172033] focus:outline-none focus:border-[#0D9488]"
+                      className="w-full min-h-[42px] glass-input rounded-2xl px-3.5 py-2 text-sm"
                     >
                       <option value="USD">USD — Dolar AS ($)</option>
                       <option value="IDR">IDR — Rupiah (Rp)</option>
@@ -325,7 +335,7 @@ export function AccountModal({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-[#172033] mb-1.5">
+                    <label className="block text-xs font-medium text-[#1A2421] mb-1.5">
                       Saldo Awal ({currency})
                     </label>
                     <input
@@ -335,7 +345,7 @@ export function AccountModal({
                       required
                       value={initialBalance}
                       onChange={(e) => setInitialBalance(e.target.value)}
-                      className="w-full bg-[#FFFFFF] border border-[#E2E8F0] rounded-lg px-3 py-2 text-sm font-mono tabular-nums text-[#172033] focus:outline-none focus:border-[#0D9488]"
+                      className="w-full min-h-[42px] glass-input rounded-2xl px-3.5 py-2 text-sm font-mono tabular-nums"
                     />
                   </div>
                 </div>
@@ -344,7 +354,7 @@ export function AccountModal({
                   <button
                     type="submit"
                     disabled={saving}
-                    className="flex items-center gap-2 py-2.5 px-4 rounded-lg bg-[#0D9488] hover:bg-[#0F766E] disabled:opacity-50 text-white font-semibold text-xs cursor-pointer"
+                    className="min-h-[42px] flex items-center gap-2 py-2.5 px-5 rounded-2xl bg-[#0D7A72] hover:bg-[#095E58] disabled:opacity-50 text-white font-semibold text-xs cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>
@@ -361,7 +371,7 @@ export function AccountModal({
           ) : (
             <form onSubmit={handleSaveProfile} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-[#172033] mb-1.5">
+                <label className="block text-xs font-medium text-[#1A2421] mb-1.5">
                   Nama Trader
                 </label>
                 <input
@@ -369,11 +379,11 @@ export function AccountModal({
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Nama tampilan Anda"
-                  className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-3.5 py-2.5 text-sm text-[#172033] focus:outline-none focus:bg-white focus:border-[#0D9488]"
+                  className="w-full min-h-[44px] glass-input rounded-2xl px-3.5 py-2.5 text-sm"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#172033] mb-1.5">
+                <label className="block text-xs font-medium text-[#1A2421] mb-1.5">
                   Gaya Trading Utama
                 </label>
                 <input
@@ -381,14 +391,14 @@ export function AccountModal({
                   value={traderStyle}
                   onChange={(e) => setTraderStyle(e.target.value)}
                   placeholder="Contoh: ICT Silver Bullet / Intraday SMC"
-                  className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-3.5 py-2.5 text-sm text-[#172033] focus:outline-none focus:bg-white focus:border-[#0D9488]"
+                  className="w-full min-h-[44px] glass-input rounded-2xl px-3.5 py-2.5 text-sm"
                 />
               </div>
               <div className="flex justify-end">
                 <button
                   type="submit"
                   disabled={saving}
-                  className="py-2.5 px-5 rounded-lg bg-[#0D9488] hover:bg-[#0F766E] disabled:opacity-50 text-white font-semibold text-xs cursor-pointer"
+                  className="min-h-[44px] py-2.5 px-5 rounded-2xl bg-[#0D7A72] hover:bg-[#095E58] disabled:opacity-50 text-white font-semibold text-xs cursor-pointer"
                 >
                   {saving ? 'Menyimpan...' : 'Simpan Profil'}
                 </button>

@@ -212,8 +212,8 @@ export function ReportsView({ trades, accountName, currency }: ReportsViewProps)
   return (
     <div className="space-y-5">
       {/* Header Toolbar */}
-      <div className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-1 p-1 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg">
+      <div className="glass-card rounded-[26px] p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-1 p-1 glass-segmented rounded-2xl">
           {(
             [
               { id: 'daily', label: 'Laporan Harian' },
@@ -226,10 +226,10 @@ export function ReportsView({ trades, accountName, currency }: ReportsViewProps)
               key={t.id}
               type="button"
               onClick={() => setActiveTab(t.id)}
-              className={`px-3 py-2 rounded-md text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+              className={`min-h-[38px] px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === t.id
-                  ? 'bg-[#FFFFFF] text-[#172033] border border-[#E2E8F0] shadow-2xs'
-                  : 'text-[#64748B] hover:text-[#172033]'
+                  ? 'bg-white text-[#0D7A72] shadow-2xs'
+                  : 'text-[#52625D] hover:text-[#1A2421]'
               }`}
             >
               {t.label}
@@ -244,7 +244,7 @@ export function ReportsView({ trades, accountName, currency }: ReportsViewProps)
             disabled={
               activeTab === 'all' ? trades.length === 0 : activePeriodRows.length === 0
             }
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#0D9488] hover:bg-[#0F766E] disabled:opacity-40 text-white text-xs font-semibold cursor-pointer whitespace-nowrap"
+            className="min-h-[42px] inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#0D7A72] hover:bg-[#095E58] disabled:opacity-40 text-white text-xs font-semibold cursor-pointer whitespace-nowrap active:scale-95 transition-transform"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Ekspor CSV Tampilan Ini</span>
@@ -254,82 +254,105 @@ export function ReportsView({ trades, accountName, currency }: ReportsViewProps)
               type="button"
               onClick={exportAllTradesCsv}
               disabled={trades.length === 0}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#F8FAFC] hover:bg-[#F1F5F9] disabled:opacity-40 border border-[#E2E8F0] text-xs font-semibold text-[#172033] cursor-pointer whitespace-nowrap"
+              className="min-h-[42px] inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/75 hover:bg-white disabled:opacity-40 border border-white/80 text-xs font-semibold text-[#1A2421] cursor-pointer whitespace-nowrap active:scale-95 transition-transform"
             >
-              <Download className="w-3.5 h-3.5 text-[#0D9488]" />
+              <Download className="w-3.5 h-3.5 text-[#0D7A72]" />
               <span>Ekspor Semua Transaksi</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Report Table */}
-      <div className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-xl overflow-hidden">
+      {/* Report Table / Mobile List */}
+      <div className="glass-card rounded-[26px] overflow-hidden">
         {activeTab !== 'all' ? (
           activePeriodRows.length === 0 ? (
-            <div className="p-12 text-center text-xs text-[#64748B]">
+            <div className="p-12 text-center text-xs text-[#52625D]">
               Belum ada transaksi tertutup untuk menyusun laporan periode ini.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-[#E2E8F0] text-[11px] font-semibold text-[#64748B] bg-[#F8FAFC]">
-                    <th className="py-3 px-5">Periode</th>
-                    <th className="py-3 px-4 text-right">Transaksi</th>
-                    <th className="py-3 px-4 text-right">W / L / BE</th>
-                    <th className="py-3 px-4 text-right">Win Rate</th>
-                    <th className="py-3 px-4 text-right">Gross P/L</th>
-                    <th className="py-3 px-4 text-right">Komisi &amp; Swap</th>
-                    <th className="py-3 px-5 text-right">Net P/L</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E2E8F0] text-xs">
-                  {activePeriodRows.map((r) => (
-                    <tr key={r.key} className="hover:bg-[#F8FAFC]">
-                      <td className="py-3 px-5 font-semibold text-[#172033] whitespace-nowrap">
-                        {r.label}
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-[#172033]">
-                        {r.totalTrades}
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-[#64748B] whitespace-nowrap">
-                        <span className="text-[#16A34A] font-medium">{r.wins}</span> /{' '}
-                        <span className="text-[#DC2626] font-medium">{r.losses}</span> / {r.be}
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-[#172033]">
-                        {r.winRate.toFixed(1)}%
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-[#172033] whitespace-nowrap">
-                        {formatCurrency(r.grossPl, currency, { signed: true })}
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-[#64748B] whitespace-nowrap">
-                        {formatCurrency(r.swap - Math.abs(r.commission), currency, {
-                          signed: true,
-                        })}
-                      </td>
-                      <td
-                        className={`py-3 px-5 text-right font-mono font-semibold tabular-nums whitespace-nowrap ${
-                          r.netPl >= 0 ? 'text-[#16A34A]' : 'text-[#DC2626]'
-                        }`}
-                      >
-                        {formatCurrency(r.netPl, currency, { signed: true })}
-                      </td>
+            <>
+              <div className="md:hidden divide-y divide-[#1A2421]/8">
+                {activePeriodRows.map((r) => (
+                  <div key={r.key} className="p-4 flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-bold text-[#1A2421]">{r.label}</div>
+                      <div className="text-xs text-[#52625D] font-mono tabular-nums mt-0.5">
+                        {r.totalTrades} trade · {r.wins}W/{r.losses}L/{r.be}BE ·{' '}
+                        {r.winRate.toFixed(1)}% WR
+                      </div>
+                    </div>
+                    <div
+                      className={`text-sm font-mono font-bold tabular-nums ${
+                        r.netPl >= 0 ? 'text-[#15803D]' : 'text-[#B91C1C]'
+                      }`}
+                    >
+                      {formatCurrency(r.netPl, currency, { signed: true })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-[#1A2421]/8 text-[11px] font-semibold text-[#52625D] bg-white/35">
+                      <th className="py-3 px-5">Periode</th>
+                      <th className="py-3 px-4 text-right">Transaksi</th>
+                      <th className="py-3 px-4 text-right">W / L / BE</th>
+                      <th className="py-3 px-4 text-right">Win Rate</th>
+                      <th className="py-3 px-4 text-right">Gross P/L</th>
+                      <th className="py-3 px-4 text-right">Komisi &amp; Swap</th>
+                      <th className="py-3 px-5 text-right">Net P/L</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-[#1A2421]/8 text-xs">
+                    {activePeriodRows.map((r) => (
+                      <tr key={r.key} className="hover:bg-white/40">
+                        <td className="py-3.5 px-5 font-semibold text-[#1A2421] whitespace-nowrap">
+                          {r.label}
+                        </td>
+                        <td className="py-3.5 px-4 text-right font-mono tabular-nums text-[#1A2421]">
+                          {r.totalTrades}
+                        </td>
+                        <td className="py-3.5 px-4 text-right font-mono tabular-nums text-[#52625D] whitespace-nowrap">
+                          <span className="text-[#15803D] font-medium">{r.wins}</span> /{' '}
+                          <span className="text-[#B91C1C] font-medium">{r.losses}</span> / {r.be}
+                        </td>
+                        <td className="py-3.5 px-4 text-right font-mono tabular-nums text-[#1A2421]">
+                          {r.winRate.toFixed(1)}%
+                        </td>
+                        <td className="py-3.5 px-4 text-right font-mono tabular-nums text-[#1A2421] whitespace-nowrap">
+                          {formatCurrency(r.grossPl, currency, { signed: true })}
+                        </td>
+                        <td className="py-3.5 px-4 text-right font-mono tabular-nums text-[#52625D] whitespace-nowrap">
+                          {formatCurrency(r.swap - Math.abs(r.commission), currency, {
+                            signed: true,
+                          })}
+                        </td>
+                        <td
+                          className={`py-3.5 px-5 text-right font-mono font-semibold tabular-nums whitespace-nowrap ${
+                            r.netPl >= 0 ? 'text-[#15803D]' : 'text-[#B91C1C]'
+                          }`}
+                        >
+                          {formatCurrency(r.netPl, currency, { signed: true })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )
         ) : trades.length === 0 ? (
-          <div className="p-12 text-center text-xs text-[#64748B]">
+          <div className="p-12 text-center text-xs text-[#52625D]">
             Belum ada data transaksi untuk diekspor.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-[#E2E8F0] text-[11px] font-semibold text-[#64748B] bg-[#F8FAFC]">
+                <tr className="border-b border-[#1A2421]/8 text-[11px] font-semibold text-[#52625D] bg-white/35">
                   <th className="py-3 px-4">Tanggal</th>
                   <th className="py-3 px-4">Pair</th>
                   <th className="py-3 px-3">Arah</th>
@@ -341,36 +364,36 @@ export function ReportsView({ trades, accountName, currency }: ReportsViewProps)
                   <th className="py-3 px-4 text-right">Net P/L</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E2E8F0] text-xs">
+              <tbody className="divide-y divide-[#1A2421]/8 text-xs">
                 {trades.map((t) => (
-                  <tr key={t.id} className="hover:bg-[#F8FAFC]">
-                    <td className="py-3 px-4 font-mono tabular-nums text-[#172033] whitespace-nowrap">
+                  <tr key={t.id} className="hover:bg-white/40">
+                    <td className="py-3.5 px-4 font-mono tabular-nums text-[#1A2421] whitespace-nowrap">
                       {formatShortDateId(t.tradeDate)}
                     </td>
-                    <td className="py-3 px-4 font-semibold text-[#172033]">{t.pair}</td>
+                    <td className="py-3.5 px-4 font-semibold text-[#1A2421]">{t.pair}</td>
                     <td
-                      className={`py-3 px-3 font-semibold ${
-                        t.direction === 'BUY' ? 'text-[#16A34A]' : 'text-[#DC2626]'
+                      className={`py-3.5 px-3 font-semibold ${
+                        t.direction === 'BUY' ? 'text-[#15803D]' : 'text-[#B91C1C]'
                       }`}
                     >
                       {t.direction}
                     </td>
-                    <td className="py-3 px-3 text-right font-mono tabular-nums text-[#172033]">
+                    <td className="py-3.5 px-3 text-right font-mono tabular-nums text-[#1A2421]">
                       {t.lotSize.toFixed(2)}
                     </td>
-                    <td className="py-3 px-3 text-right font-mono tabular-nums text-[#172033]">
+                    <td className="py-3.5 px-3 text-right font-mono tabular-nums text-[#1A2421]">
                       {formatPrice(t.entryPrice, t.pair)}
                     </td>
-                    <td className="py-3 px-3 text-right font-mono tabular-nums text-[#64748B]">
+                    <td className="py-3.5 px-3 text-right font-mono tabular-nums text-[#52625D]">
                       {formatPrice(t.exitPrice, t.pair)}
                     </td>
-                    <td className="py-3 px-3 text-[#64748B]">{t.strategy || '—'}</td>
-                    <td className="py-3 px-3 font-mono font-medium text-[#172033]">
+                    <td className="py-3.5 px-3 text-[#52625D]">{t.strategy || '—'}</td>
+                    <td className="py-3.5 px-3 font-mono font-medium text-[#1A2421]">
                       {t.status}
                     </td>
                     <td
-                      className={`py-3 px-4 text-right font-mono font-semibold tabular-nums whitespace-nowrap ${
-                        t.netPl >= 0 ? 'text-[#16A34A]' : 'text-[#DC2626]'
+                      className={`py-3.5 px-4 text-right font-mono font-semibold tabular-nums whitespace-nowrap ${
+                        t.netPl >= 0 ? 'text-[#15803D]' : 'text-[#B91C1C]'
                       }`}
                     >
                       {formatCurrency(t.netPl, currency, { signed: true })}

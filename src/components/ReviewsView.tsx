@@ -128,18 +128,18 @@ export function ReviewsView({
       : 0;
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+    <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
       {/* Left: Form */}
       <form
         onSubmit={handleSubmit}
-        className="xl:col-span-5 bg-[#FFFFFF] border border-[#E2E8F0] rounded-xl p-5 sm:p-6 space-y-4 self-start"
+        className="xl:col-span-5 glass-card rounded-[26px] p-5 sm:p-6 space-y-4 self-start"
       >
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-semibold text-[#172033]">
+            <h2 className="text-sm font-bold text-[#1A2421]">
               {editingId ? 'Ubah Evaluasi Harian' : 'Catat Evaluasi Harian'}
             </h2>
-            <p className="text-xs text-[#64748B] mt-0.5">
+            <p className="text-xs text-[#52625D] mt-0.5">
               Bangun konsistensi psikologi dan kedisiplinan aturan trading.
             </p>
           </div>
@@ -147,7 +147,7 @@ export function ReviewsView({
             <button
               type="button"
               onClick={resetForm}
-              className="text-xs text-[#64748B] hover:text-[#172033] cursor-pointer"
+              className="text-xs font-medium text-[#52625D] hover:text-[#1A2421] cursor-pointer"
             >
               Batal
             </button>
@@ -155,14 +155,14 @@ export function ReviewsView({
         </div>
 
         {errorMsg && (
-          <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-[#DC2626] font-medium">
+          <div className="p-3 rounded-2xl bg-[#DC2626]/10 border border-[#DC2626]/20 text-xs text-[#B91C1C] font-medium">
             {errorMsg}
           </div>
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-[#172033] mb-1.5">
+            <label className="block text-xs font-medium text-[#1A2421] mb-1.5">
               Tanggal Evaluasi
             </label>
             <input
@@ -170,17 +170,17 @@ export function ReviewsView({
               required
               value={reviewDate}
               onChange={(e) => setReviewDate(e.target.value)}
-              className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-3 py-2.5 text-sm font-mono text-[#172033] focus:outline-none focus:bg-white focus:border-[#0D9488]"
+              className="w-full min-h-[44px] glass-input rounded-2xl px-3.5 py-2.5 text-sm font-mono"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#172033] mb-1.5">
+            <label className="block text-xs font-medium text-[#1A2421] mb-1.5">
               Kondisi Emosi
             </label>
             <select
               value={emotionalState}
               onChange={(e) => setEmotionalState(e.target.value)}
-              className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-3 py-2.5 text-sm text-[#172033] focus:outline-none focus:bg-white focus:border-[#0D9488]"
+              className="w-full min-h-[44px] glass-input rounded-2xl px-3.5 py-2.5 text-sm"
             >
               {EMOTIONAL_STATES.map((s) => (
                 <option key={s} value={s}>
@@ -193,10 +193,10 @@ export function ReviewsView({
 
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className="text-xs font-medium text-[#172033]">
+            <label className="text-xs font-medium text-[#1A2421]">
               Nilai Kedisiplinan (1 – 10)
             </label>
-            <span className="text-xs font-mono font-semibold text-[#0D9488]">
+            <span className="text-xs font-mono font-bold text-[#0D7A72]">
               {disciplineScore} / 10
             </span>
           </div>
@@ -206,12 +206,12 @@ export function ReviewsView({
                 key={num}
                 type="button"
                 onClick={() => setDisciplineScore(num)}
-                className={`py-2 rounded-md text-xs font-mono font-semibold transition-colors cursor-pointer ${
+                className={`min-h-[38px] py-2 rounded-xl text-xs font-mono font-semibold transition-all cursor-pointer ${
                   disciplineScore === num
-                    ? 'bg-[#0D9488] text-white'
+                    ? 'bg-[#0D7A72] text-white shadow-2xs'
                     : num <= disciplineScore
-                    ? 'bg-[#0D9488]/12 text-[#0D9488] border border-[#0D9488]/30'
-                    : 'bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] hover:text-[#172033]'
+                    ? 'bg-[#D8EFE7] text-[#0D7A72]'
+                    : 'bg-white/60 text-[#52625D] border border-white/80 hover:text-[#1A2421]'
                 }`}
               >
                 {num}
@@ -221,7 +221,7 @@ export function ReviewsView({
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-[#172033] mb-1.5">
+          <label className="block text-xs font-medium text-[#1A2421] mb-1.5">
             Kesalahan Trading Hari Ini
           </label>
           <textarea
@@ -229,12 +229,12 @@ export function ReviewsView({
             value={mistakes}
             onChange={(e) => setMistakes(e.target.value)}
             placeholder="Contoh: Masuk terlalu cepat sebelum candle konfirmasi M15 ditutup."
-            className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-3 py-2 text-sm text-[#172033] placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#0D9488]"
+            className="w-full glass-input rounded-2xl px-3.5 py-2.5 text-sm placeholder:text-[#6B7C76]"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-[#172033] mb-1.5">
+          <label className="block text-xs font-medium text-[#1A2421] mb-1.5">
             Refleksi Harian
           </label>
           <textarea
@@ -242,12 +242,12 @@ export function ReviewsView({
             value={dailyReflection}
             onChange={(e) => setDailyReflection(e.target.value)}
             placeholder="Apa hal terbaik dan terburuk dari eksekusi Anda hari ini?"
-            className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-3 py-2 text-sm text-[#172033] placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#0D9488]"
+            className="w-full glass-input rounded-2xl px-3.5 py-2.5 text-sm placeholder:text-[#6B7C76]"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-[#172033] mb-1.5">
+          <label className="block text-xs font-medium text-[#1A2421] mb-1.5">
             Catatan Perkembangan Trading
           </label>
           <textarea
@@ -255,14 +255,14 @@ export function ReviewsView({
             value={progressNotes}
             onChange={(e) => setProgressNotes(e.target.value)}
             placeholder="Rencana perbaikan untuk sesi trading berikutnya."
-            className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-3 py-2 text-sm text-[#172033] placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#0D9488]"
+            className="w-full glass-input rounded-2xl px-3.5 py-2.5 text-sm placeholder:text-[#6B7C76]"
           />
         </div>
 
         <button
           type="submit"
           disabled={saving}
-          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-[#0D9488] hover:bg-[#0F766E] disabled:opacity-50 text-white font-semibold text-xs cursor-pointer"
+          className="w-full min-h-[44px] flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-[#0D7A72] hover:bg-[#095E58] disabled:opacity-50 text-white font-semibold text-xs cursor-pointer active:scale-[0.99] transition-all"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>
@@ -277,59 +277,59 @@ export function ReviewsView({
 
       {/* Right: Review History */}
       <div className="xl:col-span-7 space-y-4">
-        <div className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-xl px-5 py-4 flex items-center justify-between">
+        <div className="glass-card rounded-[26px] px-5 py-4 flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-semibold text-[#172033]">
+            <h3 className="text-sm font-bold text-[#1A2421]">
               Riwayat Evaluasi Harian
             </h3>
-            <p className="text-xs text-[#64748B] mt-0.5">
+            <p className="text-xs text-[#52625D] mt-0.5">
               {reviews.length} catatan evaluasi tersimpan
             </p>
           </div>
           <div className="text-right">
-            <div className="text-[11px] text-[#64748B]">Rata-rata Kedisiplinan</div>
-            <div className="text-base font-mono font-semibold text-[#0D9488] tabular-nums">
+            <div className="text-[11px] text-[#52625D]">Rata-rata Kedisiplinan</div>
+            <div className="text-base font-mono font-bold text-[#0D7A72] tabular-nums">
               {avgDiscipline.toFixed(1)} / 10
             </div>
           </div>
         </div>
 
         {reviews.length === 0 ? (
-          <div className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-xl p-12 text-center">
-            <p className="text-sm font-medium text-[#172033]">
+          <div className="glass-card rounded-[26px] p-12 text-center">
+            <p className="text-sm font-semibold text-[#1A2421]">
               Belum ada evaluasi harian
             </p>
-            <p className="text-xs text-[#64748B] mt-1">
+            <p className="text-xs text-[#52625D] mt-1">
               Lengkapi form evaluasi di samping setelah sesi trading selesai.
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3.5">
             {reviews.map((rev) => {
               const dayStat = dayStatsMap.get(rev.reviewDate);
               return (
                 <div
                   key={rev.id}
-                  className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-xl p-5 space-y-3"
+                  className="glass-card rounded-[26px] p-5 space-y-3.5"
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-2 pb-3 border-b border-[#E2E8F0]">
+                  <div className="flex flex-wrap items-start justify-between gap-2 pb-3 border-b border-[#1A2421]/8">
                     <div>
-                      <div className="flex items-center gap-2.5 text-sm font-semibold text-[#172033]">
+                      <div className="flex items-center gap-2.5 text-sm font-bold text-[#1A2421]">
                         <span>{formatShortDateId(rev.reviewDate)}</span>
-                        <span className="text-[#CBD5E1]">·</span>
-                        <span className="text-xs font-mono text-[#0D9488]">
+                        <span className="text-[#52625D]/40">·</span>
+                        <span className="text-xs font-mono text-[#0D7A72]">
                           Disiplin {rev.disciplineScore}/10
                         </span>
                       </div>
-                      <div className="text-xs text-[#64748B] mt-0.5">
+                      <div className="text-xs text-[#52625D] mt-0.5">
                         Emosi: {rev.emotionalState}
                         {dayStat && (
                           <>
                             {' · '}
                             {dayStat.count} transaksi (
                             <span
-                              className={`font-mono font-medium ${
-                                dayStat.netPl >= 0 ? 'text-[#16A34A]' : 'text-[#DC2626]'
+                              className={`font-mono font-semibold ${
+                                dayStat.netPl >= 0 ? 'text-[#15803D]' : 'text-[#B91C1C]'
                               }`}
                             >
                               {formatCurrency(dayStat.netPl, currency, { signed: true })}
@@ -346,14 +346,14 @@ export function ReviewsView({
                           <button
                             type="button"
                             onClick={() => handleDelete(rev.id)}
-                            className="px-2.5 py-1 rounded bg-red-50 border border-red-200 text-[#DC2626] text-xs font-semibold cursor-pointer"
+                            className="px-3 py-1.5 rounded-xl bg-[#DC2626] text-white text-xs font-semibold cursor-pointer"
                           >
                             Hapus
                           </button>
                           <button
                             type="button"
                             onClick={() => setConfirmDeleteId(null)}
-                            className="px-2 py-1 text-xs text-[#64748B] hover:text-[#172033] cursor-pointer"
+                            className="px-2.5 py-1.5 text-xs text-[#52625D] hover:text-[#1A2421] cursor-pointer"
                           >
                             Batal
                           </button>
@@ -363,7 +363,7 @@ export function ReviewsView({
                           <button
                             type="button"
                             onClick={() => handleEdit(rev)}
-                            className="p-1.5 rounded text-[#64748B] hover:text-[#172033] hover:bg-[#F1F5F9] cursor-pointer"
+                            className="p-2 rounded-xl text-[#52625D] hover:text-[#0D7A72] hover:bg-white/75 cursor-pointer"
                             title="Ubah evaluasi"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
@@ -371,7 +371,7 @@ export function ReviewsView({
                           <button
                             type="button"
                             onClick={() => setConfirmDeleteId(rev.id)}
-                            className="p-1.5 rounded text-[#64748B] hover:text-[#DC2626] hover:bg-red-50 cursor-pointer"
+                            className="p-2 rounded-xl text-[#52625D] hover:text-[#B91C1C] hover:bg-[#DC2626]/10 cursor-pointer"
                             title="Hapus evaluasi"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -383,26 +383,26 @@ export function ReviewsView({
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                     <div>
-                      <div className="font-semibold text-[#172033] mb-1">
+                      <div className="font-semibold text-[#1A2421] mb-1">
                         Kesalahan Trading
                       </div>
-                      <p className="text-[#64748B] leading-relaxed whitespace-pre-wrap">
+                      <p className="text-[#52625D] leading-relaxed whitespace-pre-wrap">
                         {rev.mistakes || 'Tidak ada kesalahan fatal tercatat.'}
                       </p>
                     </div>
                     <div>
-                      <div className="font-semibold text-[#172033] mb-1">
+                      <div className="font-semibold text-[#1A2421] mb-1">
                         Refleksi Harian
                       </div>
-                      <p className="text-[#64748B] leading-relaxed whitespace-pre-wrap">
+                      <p className="text-[#52625D] leading-relaxed whitespace-pre-wrap">
                         {rev.dailyReflection || '—'}
                       </p>
                     </div>
                     <div>
-                      <div className="font-semibold text-[#172033] mb-1">
+                      <div className="font-semibold text-[#1A2421] mb-1">
                         Catatan Perkembangan
                       </div>
-                      <p className="text-[#64748B] leading-relaxed whitespace-pre-wrap">
+                      <p className="text-[#52625D] leading-relaxed whitespace-pre-wrap">
                         {rev.progressNotes || '—'}
                       </p>
                     </div>

@@ -15,6 +15,7 @@ import type {
   DailyReview,
   HistoryTab,
   Profile,
+  SettingsSection,
   Trade,
   TradingAccount,
 } from './types.ts';
@@ -29,6 +30,8 @@ import { CalendarView } from './components/CalendarView.tsx';
 import { HistoryView } from './components/HistoryView.tsx';
 import { AnalyticsView } from './components/AnalyticsView.tsx';
 import { SettingsView } from './components/SettingsView.tsx';
+import { MoreView } from './components/MoreView.tsx';
+import { AccountModal } from './components/AccountModal.tsx';
 import { TradeFormModal } from './components/TradeFormModal.tsx';
 import { TradeDetailDrawer } from './components/TradeDetailDrawer.tsx';
 import { LogoMark, LogoSymbol } from './components/Logo.tsx';
@@ -37,34 +40,39 @@ const PAGE_ORDER: AppPage[] = [
   'dashboard',
   'journal',
   'calendar',
-  'history',
   'analytics',
+  'more',
+  'history',
   'settings',
 ];
 
 const PAGE_TITLES: Record<AppPage, { title: string; subtitle: string }> = {
   dashboard: {
     title: 'Dashboard',
-    subtitle: 'Ringkasan saldo, metrik eksekusi, kurva equity, dan transaksi terbaru',
+    subtitle: 'Ringkasan saldo, metrik harian, kurva equity, dan aktivitas trading terbaru',
   },
   journal: {
-    title: 'Jurnal Trading',
+    title: 'Journal',
     subtitle: 'Kelola catatan posisi, filter setup, alasan entry, dan screenshot chart',
   },
   calendar: {
-    title: 'Kalender Trading',
+    title: 'Calendar',
     subtitle: 'Pantau profitabilitas harian dan tinjau seluruh transaksi per tanggal',
-  },
-  history: {
-    title: 'Riwayat & Laporan',
-    subtitle: 'Riwayat transaksi, evaluasi harian, serta laporan performa & ekspor CSV',
   },
   analytics: {
     title: 'Analytics',
-    subtitle: 'Evaluasi statistik, drawdown, pair terbaik, strategi, dan sesi trading',
+    subtitle: 'Statistik performa harian, mingguan, bulanan, drawdown, pair & sesi',
+  },
+  more: {
+    title: 'More',
+    subtitle: 'Riwayat transaksi, evaluasi harian, laporan CSV, profil & pengaturan akun',
+  },
+  history: {
+    title: 'History & Reports',
+    subtitle: 'Riwayat transaksi, evaluasi harian, serta laporan performa & ekspor CSV',
   },
   settings: {
-    title: 'Pengaturan',
+    title: 'Settings',
     subtitle: 'Profil pengguna, akun trading, mata uang IDR/USD/USC, preferensi & keamanan',
   },
 };
@@ -91,7 +99,7 @@ function loadSavedPreferences(): AppPreferences {
 const pageVariants = {
   enter: (direction: number) => ({
     opacity: 0,
-    x: direction >= 0 ? 18 : -18,
+    x: direction >= 0 ? 16 : -16,
   }),
   center: {
     opacity: 1,
@@ -99,7 +107,7 @@ const pageVariants = {
   },
   exit: (direction: number) => ({
     opacity: 0,
-    x: direction >= 0 ? -14 : 14,
+    x: direction >= 0 ? -12 : 12,
   }),
 };
 
@@ -117,9 +125,11 @@ export default function App() {
 
   const [activePage, setActivePage] = useState<AppPage>('dashboard');
   const [historyTab, setHistoryTab] = useState<HistoryTab>('trades');
+  const [settingsSection, setSettingsSection] = useState<SettingsSection>('profile');
   const [navDirection, setNavDirection] = useState<number>(1);
   const [preferences, setPreferences] = useState<AppPreferences>(loadSavedPreferences);
 
+  const [accountModalOpen, setAccountModalOpen] = useState(false);
   const [tradeModalOpen, setTradeModalOpen] = useState(false);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
   const [defaultTradeDate, setDefaultTradeDate] = useState<string | undefined>(undefined);
@@ -241,9 +251,15 @@ export default function App() {
     [trades, activeAccount]
   );
 
-  const handleSelectPage = (nextPage: AppPage, nextHistoryTab?: HistoryTab) => {
-    if (nextHistoryTab) {
-      setHistoryTab(nextHistoryTab);
+  const handleSelectPage = (
+    nextPage: AppPage,
+    options?: HistoryTab | { historyTab?: HistoryTab; settingsSection?: SettingsSection }
+  ) => {
+    if (typeof options === 'string') {
+      setHistoryTab(options);
+    } else if (options) {
+      if (options.historyTab) setHistoryTab(options.historyTab);
+      if (options.settingsSection) setSettingsSection(options.settingsSection);
     }
     if (nextPage === activePage) return;
 
@@ -291,9 +307,9 @@ export default function App() {
 
   if (!authReady) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center gap-4">
+      <div className="min-h-screen sage-canvas flex flex-col items-center justify-center gap-4">
         <LogoMark size={44} />
-        <p className="text-xs font-medium text-[#64748B]">Memuat MANSYR404...</p>
+        <p className="text-xs font-medium text-[#52625D]">Memuat MANSYR404...</p>
       </div>
     );
   }
@@ -307,8 +323,8 @@ export default function App() {
 
   return (
     <MotionConfig reducedMotion={preferences.enableAnimations ? 'user' : 'always'}>
-      <div className="min-h-screen bg-[#F8FAFC] text-[#172033] flex">
-        {/* Desktop Sidebar (hidden on HP / tablet < lg) */}
+      <div className="min-h-screen sage-canvas text-[#1A2421] flex">
+        {/* Desktop Glass Sidebar (hidden on HP / tablet < lg) */}
         <Sidebar
           activePage={activePage}
           historyTab={historyTab}
@@ -316,63 +332,66 @@ export default function App() {
           accounts={accounts}
           activeAccount={activeAccount}
           onSelectAccount={setActiveAccountId}
+          onOpenAccountModal={() => setAccountModalOpen(true)}
           profile={profile}
           userEmail={user.email || ''}
           onSignOut={handleSignOut}
         />
 
         <div className="flex-1 min-w-0 flex flex-col">
-          {/* Simple Mobile & Clean Desktop Top Bar */}
-          <header className="sticky top-0 z-30 h-14 lg:h-16 bg-[#FFFFFF]/95 backdrop-blur-md border-b border-[#E2E8F0] px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="lg:hidden shrink-0">
-                <LogoSymbol size={30} />
-              </div>
-              <div className="min-w-0">
-                <h1 className="text-sm sm:text-base font-semibold text-[#172033] truncate">
-                  {pageHeader.title}
-                </h1>
-                <p className="hidden lg:block text-xs text-[#64748B] truncate">
-                  {pageHeader.subtitle}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 shrink-0">
-              {activeAccount && (
-                <div className="hidden sm:flex items-center gap-2 text-xs text-[#64748B]">
-                  <span className="hidden md:inline">{activeAccount.name}</span>
-                  <span className="hidden md:inline text-[#CBD5E1]">·</span>
-                  <span className="font-mono tabular-nums text-[#172033] font-semibold">
-                    {formatCurrency(analytics.currentBalance, currency)}
-                  </span>
+          {/* Compact Glass Top Bar */}
+          <header className="sticky top-0 z-30 px-3 sm:px-6 lg:px-8 pt-2.5 lg:pt-3">
+            <div className="glass-card rounded-[22px] h-13 lg:h-15 px-4 sm:px-5 flex items-center justify-between gap-3 max-w-[1440px] mx-auto">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="lg:hidden shrink-0">
+                  <LogoSymbol size={28} />
                 </div>
-              )}
+                <div className="min-w-0">
+                  <h1 className="text-sm sm:text-base font-bold text-[#1A2421] truncate">
+                    {pageHeader.title}
+                  </h1>
+                  <p className="hidden lg:block text-xs text-[#52625D] truncate">
+                    {pageHeader.subtitle}
+                  </p>
+                </div>
+              </div>
 
-              <motion.button
-                type="button"
-                whileTap={{ scale: 0.94 }}
-                transition={{ duration: 0.14 }}
-                disabled={!activeAccount}
-                onClick={() => handleOpenNewTrade()}
-                className="inline-flex items-center justify-center gap-1.5 min-h-[40px] py-2 px-3.5 sm:px-4 rounded-xl bg-[#0D9488] hover:bg-[#0F766E] disabled:opacity-50 text-white font-semibold text-xs transition-colors cursor-pointer whitespace-nowrap shrink-0"
-              >
-                <Plus className="w-4 h-4" />
-                <span className="sm:hidden">Tambah</span>
-                <span className="hidden sm:inline">Tambah Transaksi</span>
-              </motion.button>
+              <div className="flex items-center gap-3 shrink-0">
+                {activeAccount && (
+                  <div className="hidden sm:flex items-center gap-2 text-xs text-[#52625D]">
+                    <span className="hidden md:inline font-medium">{activeAccount.name}</span>
+                    <span className="hidden md:inline text-[#1A2421]/25">·</span>
+                    <span className="font-mono tabular-nums text-[#1A2421] font-bold">
+                      {formatCurrency(analytics.currentBalance, currency)}
+                    </span>
+                  </div>
+                )}
+
+                <motion.button
+                  type="button"
+                  whileTap={{ scale: 0.94 }}
+                  transition={{ duration: 0.14 }}
+                  disabled={!activeAccount}
+                  onClick={() => handleOpenNewTrade()}
+                  className="inline-flex items-center justify-center gap-1.5 min-h-[38px] py-2 px-3.5 sm:px-4 rounded-2xl bg-[#0D7A72] hover:bg-[#095E58] disabled:opacity-50 text-white font-semibold text-xs transition-colors cursor-pointer whitespace-nowrap shrink-0 shadow-[0_6px_16px_rgba(13,122,114,0.22)]"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span className="sm:hidden">Tambah</span>
+                  <span className="hidden sm:inline">Tambah Transaksi</span>
+                </motion.button>
+              </div>
             </div>
           </header>
 
-          {/* Main Viewport with bottom-safe padding on mobile */}
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 main-safe-bottom max-w-[1440px] w-full mx-auto overflow-x-hidden">
+          {/* Main Viewport with bottom-safe padding for floating iOS dock */}
+          <main className="flex-1 p-3 sm:p-6 lg:p-8 pt-4 sm:pt-5 main-safe-bottom max-w-[1440px] w-full mx-auto overflow-x-hidden">
             {dataError && (
-              <div className="mb-5 p-4 rounded-2xl bg-red-50 border border-red-200 flex items-center justify-between gap-4">
-                <span className="text-xs text-[#DC2626] font-medium">{dataError}</span>
+              <div className="mb-5 p-4 rounded-[22px] bg-[#DC2626]/10 border border-[#DC2626]/20 flex items-center justify-between gap-4">
+                <span className="text-xs text-[#B91C1C] font-medium">{dataError}</span>
                 <button
                   type="button"
                   onClick={handleRefreshAll}
-                  className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-white border border-red-200 text-[#DC2626] text-xs font-semibold hover:bg-red-100 cursor-pointer"
+                  className="min-h-[38px] px-3.5 py-1.5 rounded-2xl bg-white/85 text-[#B91C1C] text-xs font-semibold hover:bg-white cursor-pointer"
                 >
                   Coba Lagi
                 </button>
@@ -384,7 +403,7 @@ export default function App() {
                 {[1, 2, 3, 4].map((i) => (
                   <div
                     key={i}
-                    className="h-28 rounded-2xl bg-[#FFFFFF] border border-[#E2E8F0] animate-pulse"
+                    className="h-28 rounded-[24px] glass-card animate-pulse"
                   />
                 ))}
               </div>
@@ -398,8 +417,8 @@ export default function App() {
                   animate="center"
                   exit="exit"
                   transition={{
-                    duration: 0.24,
-                    ease: [0.25, 0.1, 0.25, 1],
+                    duration: 0.22,
+                    ease: [0.16, 1, 0.3, 1],
                   }}
                 >
                   {activePage === 'dashboard' && (
@@ -408,9 +427,15 @@ export default function App() {
                       currency={currency}
                       trades={trades}
                       compactCards={preferences.compactCards}
+                      traderName={profile?.fullName}
+                      userEmail={user.email || ''}
+                      accountName={activeAccount?.name}
                       onAddTrade={() => handleOpenNewTrade()}
                       onInspectTrade={setInspectingTrade}
                       onNavigateToJournal={() => handleSelectPage('journal')}
+                      onNavigateToProfile={() =>
+                        handleSelectPage('settings', { settingsSection: 'profile' })
+                      }
                     />
                   )}
 
@@ -436,6 +461,30 @@ export default function App() {
                     />
                   )}
 
+                  {activePage === 'analytics' && (
+                    <AnalyticsView
+                      analytics={analytics}
+                      trades={trades}
+                      initialBalance={activeAccount?.initialBalance ?? 0}
+                      currency={currency}
+                    />
+                  )}
+
+                  {activePage === 'more' && (
+                    <MoreView
+                      profile={profile}
+                      userEmail={user.email || ''}
+                      accounts={accounts}
+                      activeAccount={activeAccount}
+                      currentBalance={analytics.currentBalance}
+                      currency={currency}
+                      onSelectAccount={setActiveAccountId}
+                      onSelectPage={handleSelectPage}
+                      onOpenAccountModal={() => setAccountModalOpen(true)}
+                      onSignOut={handleSignOut}
+                    />
+                  )}
+
                   {activePage === 'history' && activeAccount && (
                     <HistoryView
                       activeTab={historyTab}
@@ -450,10 +499,6 @@ export default function App() {
                     />
                   )}
 
-                  {activePage === 'analytics' && (
-                    <AnalyticsView analytics={analytics} currency={currency} />
-                  )}
-
                   {activePage === 'settings' && (
                     <SettingsView
                       profile={profile}
@@ -466,6 +511,8 @@ export default function App() {
                       preferences={preferences}
                       onUpdatePreferences={handleUpdatePreferences}
                       onSignOut={handleSignOut}
+                      activeSection={settingsSection}
+                      onChangeSection={setSettingsSection}
                     />
                   )}
                 </motion.div>
@@ -474,10 +521,19 @@ export default function App() {
           </main>
         </div>
 
-        {/* Mobile Bottom Navigation Bar */}
+        {/* Floating iOS Bottom Navigation Dock */}
         <BottomNav activePage={activePage} onSelectPage={handleSelectPage} />
 
-        {/* Trade Modals & Drawers */}
+        {/* Account & Trade Modals & Drawers */}
+        <AccountModal
+          open={accountModalOpen}
+          onClose={() => setAccountModalOpen(false)}
+          accounts={accounts}
+          profile={profile}
+          onRefresh={handleRefreshAll}
+          onSelectAccount={setActiveAccountId}
+        />
+
         {activeAccount && (
           <TradeFormModal
             open={tradeModalOpen}

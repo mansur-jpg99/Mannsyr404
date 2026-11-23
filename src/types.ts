@@ -7,11 +7,19 @@ export type AppPage =
   | 'dashboard'
   | 'journal'
   | 'calendar'
-  | 'history'
   | 'analytics'
+  | 'more'
+  | 'history'
   | 'settings';
 
 export type HistoryTab = 'trades' | 'reviews' | 'reports';
+
+export type SettingsSection =
+  | 'profile'
+  | 'accounts'
+  | 'currency'
+  | 'preferences'
+  | 'security';
 
 export interface AppPreferences {
   defaultSession: string;

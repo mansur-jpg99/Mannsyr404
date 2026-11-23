@@ -39,7 +39,7 @@ export function LogoSymbol({ size = 30, className = '' }: LogoSymbolProps) {
       />
       <path
         d="M31.5 17V29C31.5 31.2091 29.7091 33 27.5 33H15.5C13.2909 33 11.5 31.2091 11.5 29V26.5H16.5V28H26.5V18H25V13H27.5C29.7091 13 31.5 14.7909 31.5 17Z"
-        fill="#172033"
+        fill="#1A2421"
       />
       <rect x="17" y="17" width="6" height="6" rx="1.6" fill={`url(#${gradId})`} />
     </svg>
@@ -75,7 +75,7 @@ export function LogoMark({ size = 36, className = '' }: LogoMarkProps) {
           y2="38"
           gradientUnits="userSpaceOnUse"
         >
-          <stop offset="0%" stopColor="#0D9488" />
+          <stop offset="0%" stopColor="#0D7A72" />
           <stop offset="100%" stopColor="#14B8A6" />
         </linearGradient>
       </defs>
@@ -112,12 +112,12 @@ export function BrandLogo({
     <div className={`inline-flex items-center gap-3 min-w-0 ${className}`}>
       <LogoMark size={size} className="shrink-0" />
       <div className="min-w-0 leading-none">
-        <div className="text-[15px] font-bold tracking-[0.07em] text-[#172033] truncate">
+        <div className="text-[15px] font-bold tracking-[0.07em] text-[#1A2421] truncate">
           <span>MANSYR</span>
-          <span className="text-[#0D9488]">404</span>
+          <span className="text-[#0D7A72]">404</span>
         </div>
         {subtitle && (
-          <div className="mt-1 text-[11px] font-medium text-[#64748B] truncate">
+          <div className="mt-1 text-[11px] font-medium text-[#52625D] truncate">
             {subtitle}
           </div>
         )}

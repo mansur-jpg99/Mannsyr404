@@ -5,9 +5,9 @@ import {
   Camera,
   Edit3,
   Plus,
+  RotateCcw,
   Search,
   Trash2,
-  RotateCcw,
 } from 'lucide-react';
 import type { CurrencyCode, Trade } from '../types.ts';
 import { apiRequest } from '../lib/api.ts';
@@ -108,29 +108,29 @@ export function JournalView({
   return (
     <div className="space-y-5">
       {/* Search & Filter Toolbar */}
-      <div className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl p-4 sm:p-5 space-y-4">
+      <div className="glass-card rounded-[26px] p-4 sm:p-5 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="relative flex-1 max-w-md">
-            <Search className="w-4 h-4 text-[#64748B] absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-[#52625D] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Cari pair, strategi, alasan entry, atau catatan..."
-              className="w-full min-h-[44px] bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-[#172033] placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#0D9488]"
+              className="w-full min-h-[44px] glass-input rounded-2xl pl-10 pr-3.5 py-2.5 text-sm placeholder:text-[#6B7C76]"
             />
           </div>
 
           <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 text-xs">
-            <div className="text-[#64748B]">
+            <div className="text-[#52625D]">
               Menampilkan{' '}
-              <span className="font-mono text-[#172033] font-semibold">
+              <span className="font-mono text-[#1A2421] font-semibold">
                 {filteredTrades.length}
               </span>{' '}
               transaksi · Total:{' '}
               <span
                 className={`font-mono font-semibold tabular-nums ${
-                  filteredNetPl >= 0 ? 'text-[#16A34A]' : 'text-[#DC2626]'
+                  filteredNetPl >= 0 ? 'text-[#15803D]' : 'text-[#B91C1C]'
                 }`}
               >
                 {formatCurrency(filteredNetPl, currency, { signed: true })}
@@ -139,19 +139,19 @@ export function JournalView({
             <button
               type="button"
               onClick={resetFilters}
-              className="min-h-[40px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#E2E8F0] text-[#172033] font-medium cursor-pointer whitespace-nowrap active:scale-95 transition-transform"
+              className="min-h-[40px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-white/75 hover:bg-white border border-white/80 text-[#1A2421] font-medium cursor-pointer whitespace-nowrap active:scale-95 transition-transform"
             >
-              <RotateCcw className="w-3.5 h-3.5 text-[#64748B]" />
+              <RotateCcw className="w-3.5 h-3.5 text-[#52625D]" />
               <span>Reset</span>
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5">
           <select
             value={filterPair}
             onChange={(e) => setFilterPair(e.target.value)}
-            className="min-h-[42px] bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-[#172033] focus:outline-none focus:bg-white focus:border-[#0D9488]"
+            className="min-h-[42px] glass-input rounded-2xl px-3 py-2 text-xs font-medium"
           >
             <option value="ALL">Semua Pair</option>
             {uniquePairs.map((p) => (
@@ -164,7 +164,7 @@ export function JournalView({
           <select
             value={filterDirection}
             onChange={(e) => setFilterDirection(e.target.value)}
-            className="min-h-[42px] bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-[#172033] focus:outline-none focus:bg-white focus:border-[#0D9488]"
+            className="min-h-[42px] glass-input rounded-2xl px-3 py-2 text-xs font-medium"
           >
             <option value="ALL">BUY &amp; SELL</option>
             <option value="BUY">BUY Saja</option>
@@ -174,7 +174,7 @@ export function JournalView({
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="min-h-[42px] bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-[#172033] focus:outline-none focus:bg-white focus:border-[#0D9488]"
+            className="min-h-[42px] glass-input rounded-2xl px-3 py-2 text-xs font-medium"
           >
             <option value="ALL">Semua Status</option>
             <option value="WIN">WIN</option>
@@ -186,7 +186,7 @@ export function JournalView({
           <select
             value={filterSession}
             onChange={(e) => setFilterSession(e.target.value)}
-            className="min-h-[42px] bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-[#172033] focus:outline-none focus:bg-white focus:border-[#0D9488]"
+            className="min-h-[42px] glass-input rounded-2xl px-3 py-2 text-xs font-medium"
           >
             <option value="ALL">Semua Sesi</option>
             <option value="Asia">Asia</option>
@@ -200,7 +200,7 @@ export function JournalView({
             value={filterStartDate}
             onChange={(e) => setFilterStartDate(e.target.value)}
             title="Dari Tanggal"
-            className="min-h-[42px] bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs font-mono text-[#172033] focus:outline-none focus:bg-white focus:border-[#0D9488]"
+            className="min-h-[42px] glass-input rounded-2xl px-3 py-2 text-xs font-mono"
           />
 
           <input
@@ -208,21 +208,21 @@ export function JournalView({
             value={filterEndDate}
             onChange={(e) => setFilterEndDate(e.target.value)}
             title="Sampai Tanggal"
-            className="min-h-[42px] bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs font-mono text-[#172033] focus:outline-none focus:bg-white focus:border-[#0D9488]"
+            className="min-h-[42px] glass-input rounded-2xl px-3 py-2 text-xs font-mono"
           />
         </div>
       </div>
 
       {/* Trades Ledger */}
-      <div className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl overflow-hidden">
+      <div className="glass-card rounded-[26px] overflow-hidden">
         {filteredTrades.length === 0 ? (
           <div className="p-12 text-center">
-            <p className="text-sm font-medium text-[#172033]">
+            <p className="text-sm font-semibold text-[#1A2421]">
               {trades.length === 0
                 ? 'Jurnal transaksi masih kosong'
                 : 'Tidak ada transaksi yang cocok dengan filter'}
             </p>
-            <p className="text-xs text-[#64748B] mt-1">
+            <p className="text-xs text-[#52625D] mt-1">
               {trades.length === 0
                 ? 'Catat transaksi manual pertama Anda lengkap dengan alasan entry dan screenshot chart.'
                 : 'Ubah kata kunci pencarian atau reset filter untuk melihat seluruh transaksi.'}
@@ -231,7 +231,7 @@ export function JournalView({
               <button
                 type="button"
                 onClick={onAddTrade}
-                className="mt-4 min-h-[44px] inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#0D9488] hover:bg-[#0F766E] text-white text-xs font-semibold cursor-pointer active:scale-95 transition-transform"
+                className="mt-4 min-h-[44px] inline-flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-[#0D7A72] hover:bg-[#095E58] text-white text-xs font-semibold cursor-pointer active:scale-95 transition-transform"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Tambah Transaksi</span>
@@ -240,63 +240,78 @@ export function JournalView({
           </div>
         ) : (
           <>
-            {/* Mobile 1-Column Card List */}
-            <div className="md:hidden divide-y divide-[#E2E8F0]">
+            {/* Mobile 1-Column Glass List */}
+            <div className="md:hidden divide-y divide-[#1A2421]/8">
               {filteredTrades.map((t) => (
                 <div
                   key={t.id}
                   onClick={() => onInspectTrade(t)}
-                  className="p-4 space-y-2.5 hover:bg-[#F8FAFC] transition-colors cursor-pointer"
+                  className="p-4 space-y-2.5 hover:bg-white/40 transition-colors cursor-pointer"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-[#172033]">{t.pair}</span>
-                        <span
-                          className={`inline-flex items-center gap-0.5 text-xs font-semibold ${
-                            t.direction === 'BUY' ? 'text-[#16A34A]' : 'text-[#DC2626]'
-                          }`}
-                        >
-                          {t.direction === 'BUY' ? (
-                            <ArrowUpRight className="w-3.5 h-3.5" />
-                          ) : (
-                            <ArrowDownRight className="w-3.5 h-3.5" />
-                          )}
-                          {t.direction}
-                        </span>
-                        {(t.screenshotCount || 0) > 0 && (
-                          <span className="inline-flex items-center gap-0.5 text-[11px] text-[#0D9488] font-mono">
-                            <Camera className="w-3 h-3" />
-                            {t.screenshotCount}
-                          </span>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span
+                        className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
+                          t.direction === 'BUY'
+                            ? 'bg-[#16A34A]/12 text-[#15803D]'
+                            : 'bg-[#DC2626]/12 text-[#B91C1C]'
+                        }`}
+                      >
+                        {t.direction === 'BUY' ? (
+                          <ArrowUpRight className="w-4 h-4" />
+                        ) : (
+                          <ArrowDownRight className="w-4 h-4" />
                         )}
-                      </div>
-                      <div className="text-xs text-[#64748B] font-mono tabular-nums mt-0.5">
-                        {formatShortDateId(t.tradeDate)} · {t.tradeTime} · {t.lotSize.toFixed(2)} lot
+                      </span>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-[#1A2421]">
+                            {t.pair}
+                          </span>
+                          <span
+                            className={`text-xs font-semibold ${
+                              t.direction === 'BUY'
+                                ? 'text-[#15803D]'
+                                : 'text-[#B91C1C]'
+                            }`}
+                          >
+                            {t.direction}
+                          </span>
+                          {(t.screenshotCount || 0) > 0 && (
+                            <span className="inline-flex items-center gap-0.5 text-[11px] text-[#0D7A72] font-mono">
+                              <Camera className="w-3 h-3" />
+                              {t.screenshotCount}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-[#52625D] font-mono tabular-nums mt-0.5">
+                          {formatShortDateId(t.tradeDate)} · {t.tradeTime} ·{' '}
+                          {t.lotSize.toFixed(2)} lot
+                        </div>
                       </div>
                     </div>
 
-                    <div className="text-right">
+                    <div className="text-right shrink-0">
                       <div
-                        className={`text-sm font-mono font-semibold tabular-nums ${
+                        className={`text-sm font-mono font-bold tabular-nums ${
                           t.netPl > 0
-                            ? 'text-[#16A34A]'
+                            ? 'text-[#15803D]'
                             : t.netPl < 0
-                            ? 'text-[#DC2626]'
-                            : 'text-[#64748B]'
+                            ? 'text-[#B91C1C]'
+                            : 'text-[#52625D]'
                         }`}
                       >
                         {t.status === 'OPEN'
                           ? 'Berjalan'
                           : formatCurrency(t.netPl, currency, { signed: true })}
                       </div>
-                      <div className="text-[11px] font-mono font-semibold text-[#64748B]">
+                      <div className="text-[11px] font-mono font-semibold text-[#52625D]">
                         {t.status}
                       </div>
                     </div>
                   </div>
 
-                  <div className="text-xs text-[#64748B] flex flex-wrap items-center justify-between gap-2">
+                  <div className="text-xs text-[#52625D] flex flex-wrap items-center justify-between gap-2 pl-13">
                     <span>
                       {t.strategy || '—'} · {t.session} · {t.emotion}
                     </span>
@@ -306,7 +321,7 @@ export function JournalView({
                   </div>
 
                   <div
-                    className="pt-2 border-t border-[#E2E8F0] flex items-center justify-end gap-2"
+                    className="pt-2 flex items-center justify-end gap-2"
                     onClick={(e) => e.stopPropagation()}
                   >
                     {confirmDeleteId === t.id ? (
@@ -315,14 +330,14 @@ export function JournalView({
                           type="button"
                           disabled={deletingId === t.id}
                           onClick={() => handleDelete(t.id)}
-                          className="min-h-[40px] px-3.5 py-2 rounded-xl bg-red-50 border border-red-200 text-[#DC2626] text-xs font-semibold cursor-pointer"
+                          className="min-h-[40px] px-3.5 py-2 rounded-2xl bg-[#DC2626] text-white text-xs font-semibold cursor-pointer"
                         >
                           {deletingId === t.id ? '...' : 'Konfirmasi Hapus'}
                         </button>
                         <button
                           type="button"
                           onClick={() => setConfirmDeleteId(null)}
-                          className="min-h-[40px] px-3 py-2 rounded-xl text-xs text-[#64748B] hover:text-[#172033] cursor-pointer"
+                          className="min-h-[40px] px-3 py-2 rounded-2xl bg-white/75 text-xs text-[#52625D] cursor-pointer"
                         >
                           Batal
                         </button>
@@ -332,15 +347,15 @@ export function JournalView({
                         <button
                           type="button"
                           onClick={() => onEditTrade(t)}
-                          className="min-h-[40px] inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-xs font-medium text-[#172033] cursor-pointer active:scale-95 transition-transform"
+                          className="min-h-[40px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-white/75 hover:bg-white border border-white/80 text-xs font-medium text-[#1A2421] cursor-pointer active:scale-95 transition-transform"
                         >
-                          <Edit3 className="w-3.5 h-3.5" />
+                          <Edit3 className="w-3.5 h-3.5 text-[#0D7A72]" />
                           <span>Ubah</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => setConfirmDeleteId(t.id)}
-                          className="min-h-[40px] inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-xs font-medium text-[#DC2626] cursor-pointer active:scale-95 transition-transform"
+                          className="min-h-[40px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-[#DC2626]/10 hover:bg-[#DC2626]/15 text-xs font-medium text-[#B91C1C] cursor-pointer active:scale-95 transition-transform"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                           <span>Hapus</span>
@@ -356,7 +371,7 @@ export function JournalView({
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-[#E2E8F0] text-[11px] font-semibold text-[#64748B] bg-[#F8FAFC]">
+                  <tr className="border-b border-[#1A2421]/8 text-[11px] font-semibold text-[#52625D] bg-white/35">
                     <th className="py-3 px-4">Tanggal</th>
                     <th className="py-3 px-4">Pair</th>
                     <th className="py-3 px-3">Arah</th>
@@ -371,32 +386,32 @@ export function JournalView({
                     <th className="py-3 px-4 text-right">Aksi</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#E2E8F0] text-xs">
+                <tbody className="divide-y divide-[#1A2421]/8 text-xs">
                   {filteredTrades.map((t) => (
                     <tr
                       key={t.id}
                       onClick={() => onInspectTrade(t)}
-                      className="hover:bg-[#F8FAFC] transition-colors cursor-pointer"
+                      className="hover:bg-white/45 transition-colors cursor-pointer"
                     >
-                      <td className="py-3 px-4 font-mono tabular-nums text-[#172033] whitespace-nowrap">
+                      <td className="py-3.5 px-4 font-mono tabular-nums text-[#1A2421] whitespace-nowrap">
                         {formatShortDateId(t.tradeDate)}
-                        <span className="text-[#64748B] ml-1.5">{t.tradeTime}</span>
+                        <span className="text-[#52625D] ml-1.5">{t.tradeTime}</span>
                       </td>
-                      <td className="py-3 px-4 font-semibold text-[#172033] whitespace-nowrap">
+                      <td className="py-3.5 px-4 font-semibold text-[#1A2421] whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
                           <span>{t.pair}</span>
                           {(t.screenshotCount || 0) > 0 && (
-                            <span className="inline-flex items-center gap-0.5 text-[11px] text-[#0D9488] font-mono">
+                            <span className="inline-flex items-center gap-0.5 text-[11px] text-[#0D7A72] font-mono">
                               <Camera className="w-3 h-3" />
                               {t.screenshotCount}
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="py-3 px-3 whitespace-nowrap">
+                      <td className="py-3.5 px-3 whitespace-nowrap">
                         <span
                           className={`inline-flex items-center gap-1 font-semibold ${
-                            t.direction === 'BUY' ? 'text-[#16A34A]' : 'text-[#DC2626]'
+                            t.direction === 'BUY' ? 'text-[#15803D]' : 'text-[#B91C1C]'
                           }`}
                         >
                           {t.direction === 'BUY' ? (
@@ -407,54 +422,54 @@ export function JournalView({
                           {t.direction}
                         </span>
                       </td>
-                      <td className="py-3 px-3 text-right font-mono tabular-nums text-[#172033]">
+                      <td className="py-3.5 px-3 text-right font-mono tabular-nums text-[#1A2421]">
                         {t.lotSize.toFixed(2)}
                       </td>
-                      <td className="py-3 px-3 text-right font-mono tabular-nums text-[#172033]">
+                      <td className="py-3.5 px-3 text-right font-mono tabular-nums text-[#1A2421]">
                         {formatPrice(t.entryPrice, t.pair)}
                       </td>
-                      <td className="py-3 px-3 text-right font-mono tabular-nums text-[#64748B] whitespace-nowrap">
-                        <span className="text-[#DC2626]">
+                      <td className="py-3.5 px-3 text-right font-mono tabular-nums text-[#52625D] whitespace-nowrap">
+                        <span className="text-[#B91C1C]">
                           {formatPrice(t.stopLoss, t.pair)}
                         </span>
                         <span className="mx-1">/</span>
-                        <span className="text-[#16A34A]">
+                        <span className="text-[#15803D]">
                           {formatPrice(t.takeProfit, t.pair)}
                         </span>
                       </td>
-                      <td className="py-3 px-3 text-right font-mono tabular-nums text-[#172033]">
+                      <td className="py-3.5 px-3 text-right font-mono tabular-nums text-[#1A2421]">
                         {formatPrice(t.exitPrice, t.pair)}
                       </td>
-                      <td className="py-3 px-3 text-[#172033] whitespace-nowrap">
+                      <td className="py-3.5 px-3 text-[#1A2421] whitespace-nowrap">
                         <span>{t.strategy || '—'}</span>
-                        <span className="text-[#64748B] mx-1.5">·</span>
-                        <span className="text-[#64748B]">{t.session}</span>
+                        <span className="text-[#52625D] mx-1.5">·</span>
+                        <span className="text-[#52625D]">{t.session}</span>
                       </td>
-                      <td className="py-3 px-3 text-[#64748B] whitespace-nowrap">
+                      <td className="py-3.5 px-3 text-[#52625D] whitespace-nowrap">
                         {t.emotion}
                       </td>
-                      <td className="py-3 px-3 whitespace-nowrap">
+                      <td className="py-3.5 px-3 whitespace-nowrap">
                         <span
                           className={`font-mono font-semibold ${
                             t.status === 'WIN'
-                              ? 'text-[#16A34A]'
+                              ? 'text-[#15803D]'
                               : t.status === 'LOSS'
-                              ? 'text-[#DC2626]'
+                              ? 'text-[#B91C1C]'
                               : t.status === 'BE'
-                              ? 'text-[#64748B]'
-                              : 'text-amber-600'
+                              ? 'text-[#52625D]'
+                              : 'text-amber-700'
                           }`}
                         >
                           {t.status}
                         </span>
                       </td>
                       <td
-                        className={`py-3 px-4 text-right font-mono font-semibold tabular-nums whitespace-nowrap ${
+                        className={`py-3.5 px-4 text-right font-mono font-semibold tabular-nums whitespace-nowrap ${
                           t.netPl > 0
-                            ? 'text-[#16A34A]'
+                            ? 'text-[#15803D]'
                             : t.netPl < 0
-                            ? 'text-[#DC2626]'
-                            : 'text-[#64748B]'
+                            ? 'text-[#B91C1C]'
+                            : 'text-[#52625D]'
                         }`}
                       >
                         {t.status === 'OPEN'
@@ -462,7 +477,7 @@ export function JournalView({
                           : formatCurrency(t.netPl, currency, { signed: true })}
                       </td>
                       <td
-                        className="py-3 px-4 text-right whitespace-nowrap"
+                        className="py-3.5 px-4 text-right whitespace-nowrap"
                         onClick={(e) => e.stopPropagation()}
                       >
                         {confirmDeleteId === t.id ? (
@@ -471,14 +486,14 @@ export function JournalView({
                               type="button"
                               disabled={deletingId === t.id}
                               onClick={() => handleDelete(t.id)}
-                              className="px-2.5 py-1 rounded bg-red-50 border border-red-200 text-[#DC2626] hover:bg-red-100 text-[11px] font-semibold cursor-pointer"
+                              className="px-2.5 py-1 rounded-xl bg-[#DC2626] text-white text-[11px] font-semibold cursor-pointer"
                             >
                               {deletingId === t.id ? '...' : 'Hapus'}
                             </button>
                             <button
                               type="button"
                               onClick={() => setConfirmDeleteId(null)}
-                              className="px-2 py-1 rounded text-[#64748B] hover:text-[#172033] text-[11px] cursor-pointer"
+                              className="px-2 py-1 rounded-xl text-[#52625D] hover:text-[#1A2421] text-[11px] cursor-pointer"
                             >
                               Batal
                             </button>
@@ -488,7 +503,7 @@ export function JournalView({
                             <button
                               type="button"
                               onClick={() => onEditTrade(t)}
-                              className="p-1.5 rounded text-[#64748B] hover:text-[#172033] hover:bg-[#F1F5F9] cursor-pointer"
+                              className="p-2 rounded-xl text-[#52625D] hover:text-[#0D7A72] hover:bg-white/75 cursor-pointer"
                               title="Ubah transaksi"
                             >
                               <Edit3 className="w-3.5 h-3.5" />
@@ -496,7 +511,7 @@ export function JournalView({
                             <button
                               type="button"
                               onClick={() => setConfirmDeleteId(t.id)}
-                              className="p-1.5 rounded text-[#64748B] hover:text-[#DC2626] hover:bg-red-50 cursor-pointer"
+                              className="p-2 rounded-xl text-[#52625D] hover:text-[#B91C1C] hover:bg-[#DC2626]/10 cursor-pointer"
                               title="Hapus transaksi"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
