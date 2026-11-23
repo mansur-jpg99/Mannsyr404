@@ -1,0 +1,19 @@
+<svg width="512" height="512" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="mansyrAppIconGrad" x1="2" y1="2" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0D9488" />
+      <stop offset="100%" stop-color="#14B8A6" />
+    </linearGradient>
+  </defs>
+  <rect x="1.5" y="1.5" width="37" height="37" rx="10" fill="url(#mansyrAppIconGrad)" />
+  <path
+    d="M10.5 22.5V12.5C10.5 10.8431 11.8431 9.5 13.5 9.5H23.5C25.1569 9.5 26.5 10.8431 26.5 12.5V14.5H22.5V13.5H14.5V21.5H15.5V25.5H13.5C11.8431 25.5 10.5 24.1569 10.5 22.5Z"
+    fill="#FFFFFF"
+  />
+  <path
+    d="M29.5 17.5V27.5C29.5 29.1569 28.1569 30.5 26.5 30.5H16.5C14.8431 30.5 13.5 29.1569 13.5 27.5V25.5H17.5V26.5H25.5V18.5H24.5V14.5H26.5C28.1569 14.5 29.5 15.8431 29.5 17.5Z"
+    fill="#FFFFFF"
+    fill-opacity="0.82"
+  />
+  <rect x="17.5" y="17.5" width="5" height="5" rx="1.4" fill="#FFFFFF" />
+</svg>

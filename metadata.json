@@ -1,0 +1,8 @@
+{
+  "name": "MANSUR ACADEMY — INNER CIRCLE TRADER",
+  "description": "Aplikasi jurnal trading Forex profesional multi-user dengan analitik kinerja, kalender trading, evaluasi harian, dan manajemen screenshot.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
