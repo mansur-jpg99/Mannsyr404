@@ -23,10 +23,15 @@ import type {
 } from '../types.ts';
 import { apiRequest } from '../lib/api.ts';
 import { getSupabaseClient } from '../lib/supabase.ts';
-import { formatCurrency } from '../utils/formatters.ts';
+import {
+  formatCurrency,
+  getUserInitials,
+  resolveUserDisplayName,
+} from '../utils/formatters.ts';
 
 interface SettingsViewProps {
   profile: Profile | null;
+  displayName?: string;
   userEmail: string;
   userUid: string;
   accounts: TradingAccount[];
@@ -52,6 +57,7 @@ const CURRENCY_OPTIONS: Array<{
 
 export function SettingsView({
   profile,
+  displayName: resolvedNameProp,
   userEmail,
   userUid,
   accounts,
@@ -281,14 +287,10 @@ export function SettingsView({
     }
   };
 
-  const displayName = profile?.fullName || userEmail.split('@')[0] || 'Trader';
-  const initials = displayName
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0])
-    .join('')
-    .toUpperCase();
+  const displayName =
+    resolvedNameProp?.trim() ||
+    resolveUserDisplayName(profile, { email: userEmail });
+  const initials = getUserInitials(displayName, userEmail);
 
   const MENU_ITEMS: Array<{
     id: SettingsSection;

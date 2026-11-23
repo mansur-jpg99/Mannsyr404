@@ -1,4 +1,71 @@
-import type { CurrencyCode } from '../types.ts';
+import type { CurrencyCode, Profile } from '../types.ts';
+
+export interface AuthUserLike {
+  id?: string;
+  email?: string | null;
+  user_metadata?: Record<string, unknown> | null;
+}
+
+function readNonEmptyString(val: unknown): string {
+  return typeof val === 'string' ? val.trim() : '';
+}
+
+export function resolveUserDisplayName(
+  profile?: Pick<Profile, 'uid' | 'email' | 'fullName'> | null,
+  user?: AuthUserLike | null
+): string {
+  const scopedProfile =
+    profile && (!user?.id || !profile.uid || profile.uid === user.id)
+      ? profile
+      : null;
+
+  const meta = user?.user_metadata ?? {};
+
+  // 1. Prioritaskan nama lengkap pengguna (full name) dari profil Supabase atau metadata auth
+  const fullName =
+    readNonEmptyString(scopedProfile?.fullName) ||
+    readNonEmptyString(meta.full_name) ||
+    readNonEmptyString(meta.fullName) ||
+    readNonEmptyString(meta.name);
+
+  if (fullName) return fullName;
+
+  // 2. Jika nama lengkap tidak tersedia, gunakan username
+  const username =
+    readNonEmptyString(meta.username) ||
+    readNonEmptyString(meta.user_name) ||
+    readNonEmptyString(meta.preferred_username);
+
+  if (username) return username;
+
+  // 3. Jika keduanya tidak tersedia, gunakan email tanpa domain sebagai fallback
+  const email =
+    readNonEmptyString(scopedProfile?.email) || readNonEmptyString(user?.email);
+
+  if (email && email.includes('@')) {
+    const localPart = email.split('@')[0]?.trim();
+    if (localPart) return localPart;
+  }
+  if (email) return email;
+
+  // 4. Fallback netral tanpa menyertakan nama brand
+  return 'Trader';
+}
+
+export function getUserInitials(
+  displayName: string,
+  fallbackEmail?: string
+): string {
+  const source =
+    displayName.trim() ||
+    (fallbackEmail ? fallbackEmail.split('@')[0]?.trim() : '') ||
+    'TR';
+  const parts = source.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  }
+  return source.slice(0, 2).toUpperCase() || 'TR';
+}
 
 export function formatCurrency(
   amount: number,

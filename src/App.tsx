@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { Plus } from 'lucide-react';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
@@ -20,7 +20,7 @@ import type {
   TradingAccount,
 } from './types.ts';
 import { calculateAnalytics } from './utils/analytics.ts';
-import { formatCurrency } from './utils/formatters.ts';
+import { formatCurrency, resolveUserDisplayName } from './utils/formatters.ts';
 import { AuthScreen } from './components/AuthScreen.tsx';
 import { Sidebar } from './components/Sidebar.tsx';
 import { BottomNav } from './components/BottomNav.tsx';
@@ -135,6 +135,27 @@ export default function App() {
   const [defaultTradeDate, setDefaultTradeDate] = useState<string | undefined>(undefined);
   const [inspectingTrade, setInspectingTrade] = useState<Trade | null>(null);
 
+  const activeUserIdRef = useRef<string | null>(null);
+  const currentUserId = user?.id ?? null;
+
+  const resetWorkspaceState = useCallback((resetPage: boolean) => {
+    setProfile(null);
+    setAccounts([]);
+    setActiveAccountId(null);
+    setTrades([]);
+    setReviews([]);
+    setInspectingTrade(null);
+    setDataError('');
+    if (resetPage) {
+      setActivePage('dashboard');
+    }
+  }, []);
+
+  useEffect(() => {
+    activeUserIdRef.current = currentUserId;
+    resetWorkspaceState(!currentUserId);
+  }, [currentUserId, resetWorkspaceState]);
+
   useEffect(() => {
     let active = true;
     let subscription: { unsubscribe: () => void } | null = null;
@@ -149,21 +170,24 @@ export default function App() {
 
       const { data } = await supabase.auth.getSession();
       if (!active) return;
-      setUser(data.session?.user ?? null);
+      const initialUser = data.session?.user ?? null;
+      activeUserIdRef.current = initialUser?.id ?? null;
+      setUser(initialUser);
       setAuthReady(true);
 
       const { data: listenerData } = supabase.auth.onAuthStateChange(
-        (_event, session) => {
+        (event, session) => {
           const nextUser = session?.user ?? null;
+          const nextUid = nextUser?.id ?? null;
+          if (activeUserIdRef.current !== nextUid) {
+            activeUserIdRef.current = nextUid;
+            resetWorkspaceState(!nextUser);
+          }
           setUser(nextUser);
           setAuthReady(true);
-          if (!nextUser) {
-            setProfile(null);
-            setAccounts([]);
-            setActiveAccountId(null);
-            setTrades([]);
-            setReviews([]);
-            setActivePage('dashboard');
+          if (event === 'PASSWORD_RECOVERY' && nextUser) {
+            setActivePage('settings');
+            setSettingsSection('security');
           }
         }
       );
@@ -174,13 +198,15 @@ export default function App() {
       active = false;
       subscription?.unsubscribe();
     };
-  }, []);
+  }, [resetWorkspaceState]);
 
   const loadWorkspaceProfile = useCallback(async () => {
     const supabase = getSupabaseClient();
     if (!supabase) return;
     const { data: sessionData } = await supabase.auth.getSession();
-    if (!sessionData.session) return;
+    const sessionUser = sessionData.session?.user;
+    if (!sessionUser) return;
+    const targetUid = sessionUser.id;
 
     setLoadingData(true);
     setDataError('');
@@ -189,19 +215,68 @@ export default function App() {
         profile: Profile | null;
         accounts: TradingAccount[];
       }>('/api/profile');
-      setProfile(data.profile);
-      setAccounts(data.accounts);
+      if (activeUserIdRef.current !== targetUid) return;
+
+      let nextProfile =
+        data.profile && data.profile.uid === targetUid ? data.profile : null;
+
+      if (!nextProfile || !nextProfile.fullName.trim()) {
+        const { data: sbProfile } = await supabase
+          .from('profiles')
+          .select('id, uid, email, full_name, trader_style')
+          .eq('uid', targetUid)
+          .limit(1)
+          .maybeSingle();
+
+        if (activeUserIdRef.current !== targetUid) return;
+        if (sbProfile) {
+          nextProfile = {
+            id: Number(sbProfile.id),
+            uid: String(sbProfile.uid),
+            email: String(sbProfile.email ?? sessionUser.email ?? ''),
+            fullName: String(sbProfile.full_name ?? ''),
+            traderStyle: String(sbProfile.trader_style ?? 'Inner Circle Trader'),
+          };
+        }
+      }
+
+      setProfile(nextProfile);
+      setAccounts(data.accounts.filter((a) => a.userId === targetUid));
 
       setActiveAccountId((prevId) => {
-        if (prevId && data.accounts.some((a) => a.id === prevId)) {
+        const userAccounts = data.accounts.filter((a) => a.userId === targetUid);
+        if (prevId && userAccounts.some((a) => a.id === prevId)) {
           return prevId;
         }
-        return data.accounts[0]?.id ?? null;
+        return userAccounts[0]?.id ?? null;
       });
     } catch (err: any) {
+      if (activeUserIdRef.current !== targetUid) return;
+      try {
+        const { data: sbProfile } = await supabase
+          .from('profiles')
+          .select('id, uid, email, full_name, trader_style')
+          .eq('uid', targetUid)
+          .limit(1)
+          .maybeSingle();
+
+        if (activeUserIdRef.current === targetUid && sbProfile) {
+          setProfile({
+            id: Number(sbProfile.id),
+            uid: String(sbProfile.uid),
+            email: String(sbProfile.email ?? sessionUser.email ?? ''),
+            fullName: String(sbProfile.full_name ?? ''),
+            traderStyle: String(sbProfile.trader_style ?? 'Inner Circle Trader'),
+          });
+        }
+      } catch {
+        // fallback ke user_metadata di resolveUserDisplayName
+      }
       setDataError(err.message || 'Gagal memuat ruang kerja akun.');
     } finally {
-      setLoadingData(false);
+      if (activeUserIdRef.current === targetUid) {
+        setLoadingData(false);
+      }
     }
   }, []);
 
@@ -209,7 +284,9 @@ export default function App() {
     const supabase = getSupabaseClient();
     if (!supabase) return;
     const { data: sessionData } = await supabase.auth.getSession();
-    if (!sessionData.session) return;
+    const sessionUser = sessionData.session?.user;
+    if (!sessionUser) return;
+    const targetUid = sessionUser.id;
     setLoadingData(true);
     setDataError('');
     try {
@@ -217,33 +294,55 @@ export default function App() {
         apiRequest<Trade[]>(`/api/trades?accountId=${accountId}`),
         apiRequest<DailyReview[]>(`/api/reviews?accountId=${accountId}`),
       ]);
+      if (activeUserIdRef.current !== targetUid) return;
       setTrades(tradeRows);
       setReviews(reviewRows);
       setInspectingTrade((curr) =>
         curr ? tradeRows.find((t) => t.id === curr.id) || null : null
       );
     } catch (err: any) {
+      if (activeUserIdRef.current !== targetUid) return;
       setDataError(err.message || 'Gagal memuat data transaksi.');
     } finally {
-      setLoadingData(false);
+      if (activeUserIdRef.current === targetUid) {
+        setLoadingData(false);
+      }
     }
   }, []);
 
   useEffect(() => {
-    if (user) {
+    if (currentUserId) {
       loadWorkspaceProfile();
     }
-  }, [user, loadWorkspaceProfile]);
+  }, [currentUserId, loadWorkspaceProfile]);
 
   useEffect(() => {
-    if (user && activeAccountId) {
+    if (currentUserId && activeAccountId) {
       loadAccountData(activeAccountId);
     }
-  }, [user, activeAccountId, loadAccountData]);
+  }, [currentUserId, activeAccountId, loadAccountData]);
+
+  const scopedProfile = useMemo(
+    () => (profile && user && profile.uid === user.id ? profile : null),
+    [profile, user]
+  );
+
+  const scopedAccounts = useMemo(
+    () => (user ? accounts.filter((a) => a.userId === user.id) : []),
+    [accounts, user]
+  );
 
   const activeAccount = useMemo(
-    () => accounts.find((a) => a.id === activeAccountId) || accounts[0] || null,
-    [accounts, activeAccountId]
+    () =>
+      scopedAccounts.find((a) => a.id === activeAccountId) ||
+      scopedAccounts[0] ||
+      null,
+    [scopedAccounts, activeAccountId]
+  );
+
+  const resolvedDisplayName = useMemo(
+    () => resolveUserDisplayName(scopedProfile, user),
+    [scopedProfile, user]
   );
 
   const analytics = useMemo(
@@ -315,7 +414,11 @@ export default function App() {
   }
 
   if (!user) {
-    return <AuthScreen />;
+    return (
+      <MotionConfig reducedMotion="user">
+        <AuthScreen />
+      </MotionConfig>
+    );
   }
 
   const pageHeader = PAGE_TITLES[activePage];
@@ -329,11 +432,12 @@ export default function App() {
           activePage={activePage}
           historyTab={historyTab}
           onSelectPage={handleSelectPage}
-          accounts={accounts}
+          accounts={scopedAccounts}
           activeAccount={activeAccount}
           onSelectAccount={setActiveAccountId}
           onOpenAccountModal={() => setAccountModalOpen(true)}
-          profile={profile}
+          profile={scopedProfile}
+          displayName={resolvedDisplayName}
           userEmail={user.email || ''}
           onSignOut={handleSignOut}
         />
@@ -427,9 +531,10 @@ export default function App() {
                       currency={currency}
                       trades={trades}
                       compactCards={preferences.compactCards}
-                      traderName={profile?.fullName}
+                      traderName={resolvedDisplayName}
                       userEmail={user.email || ''}
                       accountName={activeAccount?.name}
+                      accountBroker={activeAccount?.broker}
                       onAddTrade={() => handleOpenNewTrade()}
                       onInspectTrade={setInspectingTrade}
                       onNavigateToJournal={() => handleSelectPage('journal')}
@@ -472,9 +577,10 @@ export default function App() {
 
                   {activePage === 'more' && (
                     <MoreView
-                      profile={profile}
+                      profile={scopedProfile}
+                      displayName={resolvedDisplayName}
                       userEmail={user.email || ''}
-                      accounts={accounts}
+                      accounts={scopedAccounts}
                       activeAccount={activeAccount}
                       currentBalance={analytics.currentBalance}
                       currency={currency}
@@ -501,10 +607,11 @@ export default function App() {
 
                   {activePage === 'settings' && (
                     <SettingsView
-                      profile={profile}
+                      profile={scopedProfile}
+                      displayName={resolvedDisplayName}
                       userEmail={user.email || ''}
                       userUid={user.id}
-                      accounts={accounts}
+                      accounts={scopedAccounts}
                       activeAccount={activeAccount}
                       onSelectAccount={setActiveAccountId}
                       onRefresh={handleRefreshAll}
@@ -528,8 +635,8 @@ export default function App() {
         <AccountModal
           open={accountModalOpen}
           onClose={() => setAccountModalOpen(false)}
-          accounts={accounts}
-          profile={profile}
+          accounts={scopedAccounts}
+          profile={scopedProfile}
           onRefresh={handleRefreshAll}
           onSelectAccount={setActiveAccountId}
         />

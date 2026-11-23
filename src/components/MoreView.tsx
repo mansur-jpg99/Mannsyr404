@@ -22,10 +22,15 @@ import type {
   SettingsSection,
   TradingAccount,
 } from '../types.ts';
-import { formatCurrency } from '../utils/formatters.ts';
+import {
+  formatCurrency,
+  getUserInitials,
+  resolveUserDisplayName,
+} from '../utils/formatters.ts';
 
 interface MoreViewProps {
   profile: Profile | null;
+  displayName?: string;
   userEmail: string;
   accounts: TradingAccount[];
   activeAccount: TradingAccount | null;
@@ -40,17 +45,9 @@ interface MoreViewProps {
   onSignOut: () => Promise<void>;
 }
 
-function getInitials(name: string, email: string): string {
-  const source = name.trim() || email.split('@')[0] || 'TR';
-  const parts = source.split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) {
-    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-  }
-  return source.slice(0, 2).toUpperCase();
-}
-
 export function MoreView({
   profile,
+  displayName: resolvedNameProp,
   userEmail,
   accounts,
   activeAccount,
@@ -64,8 +61,10 @@ export function MoreView({
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
 
-  const displayName = profile?.fullName || userEmail.split('@')[0] || 'Trader';
-  const initials = getInitials(profile?.fullName || '', userEmail);
+  const displayName =
+    resolvedNameProp?.trim() ||
+    resolveUserDisplayName(profile, { email: userEmail });
+  const initials = getUserInitials(displayName, userEmail);
 
   const handleLogout = async () => {
     setSigningOut(true);

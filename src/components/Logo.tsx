@@ -3,13 +3,20 @@ import { useId } from 'react';
 interface LogoSymbolProps {
   size?: number;
   className?: string;
+  variant?: 'brand' | 'white';
 }
 
 /**
- * Simbol geometris murni tanpa kotak luar (digunakan untuk navigasi mobile & favicon).
+ * Simbol geometris murni tanpa kotak luar (digunakan untuk navigasi mobile, favicon, dan auth badge).
  */
-export function LogoSymbol({ size = 30, className = '' }: LogoSymbolProps) {
+export function LogoSymbol({
+  size = 30,
+  className = '',
+  variant = 'brand',
+}: LogoSymbolProps) {
   const gradId = useId();
+  const isWhite = variant === 'white';
+
   return (
     <svg
       width={size}
@@ -35,13 +42,20 @@ export function LogoSymbol({ size = 30, className = '' }: LogoSymbolProps) {
       </defs>
       <path
         d="M8.5 23V11C8.5 8.79086 10.2909 7 12.5 7H24.5C26.7091 7 28.5 8.79086 28.5 11V13.5H23.5V12H13.5V22H15V27H12.5C10.2909 27 8.5 25.2091 8.5 23Z"
-        fill={`url(#${gradId})`}
+        fill={isWhite ? '#FFFFFF' : `url(#${gradId})`}
       />
       <path
         d="M31.5 17V29C31.5 31.2091 29.7091 33 27.5 33H15.5C13.2909 33 11.5 31.2091 11.5 29V26.5H16.5V28H26.5V18H25V13H27.5C29.7091 13 31.5 14.7909 31.5 17Z"
-        fill="#1A2421"
+        fill={isWhite ? 'rgba(255, 255, 255, 0.84)' : '#1A2421'}
       />
-      <rect x="17" y="17" width="6" height="6" rx="1.6" fill={`url(#${gradId})`} />
+      <rect
+        x="17"
+        y="17"
+        width="6"
+        height="6"
+        rx="1.6"
+        fill={isWhite ? '#FFFFFF' : `url(#${gradId})`}
+      />
     </svg>
   );
 }

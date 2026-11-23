@@ -32,6 +32,8 @@ import {
   formatPrice,
   formatShortDateId,
   getTodayIsoDate,
+  getUserInitials,
+  resolveUserDisplayName,
 } from '../utils/formatters.ts';
 
 interface DashboardViewProps {
@@ -42,6 +44,7 @@ interface DashboardViewProps {
   traderName?: string;
   userEmail?: string;
   accountName?: string;
+  accountBroker?: string;
   onAddTrade: () => void;
   onInspectTrade: (trade: Trade) => void;
   onNavigateToJournal: () => void;
@@ -56,6 +59,7 @@ export function DashboardView({
   traderName,
   userEmail = '',
   accountName,
+  accountBroker,
   onAddTrade,
   onInspectTrade,
   onNavigateToJournal,
@@ -102,14 +106,10 @@ export function DashboardView({
     return list.slice(0, 7);
   }, [trades, searchQuery]);
 
-  const displayName = traderName?.trim() || userEmail.split('@')[0] || 'Trader';
-  const initials = displayName
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0])
-    .join('')
-    .toUpperCase();
+  const displayName =
+    traderName?.trim() ||
+    resolveUserDisplayName(null, { email: userEmail });
+  const initials = getUserInitials(displayName, userEmail);
 
   const todayFormatted = useMemo(() => {
     try {
@@ -123,6 +123,10 @@ export function DashboardView({
       return formatShortDateId(todayIso);
     }
   }, [todayIso]);
+
+  const accountSubtitle = accountName
+    ? `${accountName}${accountBroker ? ` · ${accountBroker}` : ` (${currency})`}`
+    : userEmail;
 
   const cardPadding = compactCards ? 'p-4' : 'p-4 sm:p-5';
   const decidedCount = analytics.winCount + analytics.lossCount;
@@ -143,12 +147,12 @@ export function DashboardView({
                 className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#0D7A72] to-[#14B8A6] text-white font-bold text-sm flex items-center justify-center shrink-0 shadow-[0_8px_20px_rgba(13,122,114,0.24)] cursor-pointer active:scale-95 transition-transform"
                 title="Buka profil & pengaturan"
               >
-                {initials || 'TR'}
+                {initials}
               </button>
               <div className="min-w-0">
-                <div className="text-xs font-medium text-[#52625D]">
+                <div className="text-xs font-medium text-[#52625D] truncate">
                   {todayFormatted}
-                  {accountName ? ` · ${accountName}` : ''}
+                  {accountSubtitle ? ` · ${accountSubtitle}` : ''}
                 </div>
                 <h2 className="text-lg sm:text-xl font-bold text-[#1A2421] tracking-tight truncate">
                   Welcome back, {displayName}!

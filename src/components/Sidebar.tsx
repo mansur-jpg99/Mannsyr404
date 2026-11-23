@@ -14,7 +14,11 @@ import {
 import { motion } from 'motion/react';
 import type { AppPage, HistoryTab, Profile, TradingAccount } from '../types.ts';
 import { BrandLogo } from './Logo.tsx';
-import { formatCurrency } from '../utils/formatters.ts';
+import {
+  formatCurrency,
+  getUserInitials,
+  resolveUserDisplayName,
+} from '../utils/formatters.ts';
 
 interface SidebarProps {
   activePage: AppPage;
@@ -25,6 +29,7 @@ interface SidebarProps {
   onSelectAccount: (accountId: number) => void;
   onOpenAccountModal: () => void;
   profile: Profile | null;
+  displayName?: string;
   userEmail: string;
   onSignOut: () => void;
 }
@@ -57,17 +62,14 @@ export function Sidebar({
   onSelectAccount,
   onOpenAccountModal,
   profile,
+  displayName: resolvedNameProp,
   userEmail,
   onSignOut,
 }: SidebarProps) {
-  const displayName = profile?.fullName || userEmail.split('@')[0] || 'Trader';
-  const initials = displayName
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0])
-    .join('')
-    .toUpperCase();
+  const displayName =
+    resolvedNameProp?.trim() ||
+    resolveUserDisplayName(profile, { email: userEmail });
+  const initials = getUserInitials(displayName, userEmail);
 
   return (
     <aside className="hidden lg:block shrink-0 h-screen sticky top-0 p-3 pr-0">
