@@ -22,7 +22,7 @@ import type {
   TradingAccount,
 } from '../types.ts';
 import { apiRequest } from '../lib/api.ts';
-import { getSupabaseClient } from '../lib/supabase.ts';
+import { initSupabaseClient } from '../lib/supabase.ts';
 import {
   formatCurrency,
   getUserInitials,
@@ -255,7 +255,7 @@ export function SettingsView({
       return;
     }
 
-    const supabase = getSupabaseClient();
+    const supabase = await initSupabaseClient();
     if (!supabase) {
       setSecurityError('Koneksi autentikasi Supabase belum siap.');
       return;

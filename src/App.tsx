@@ -7,8 +7,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { Plus } from 'lucide-react';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
-import { getSupabaseClient, initSupabaseClient } from './lib/supabase.ts';
-import { apiRequest } from './lib/api.ts';
+import {
+  clearLocalAuthSession,
+  getValidSession,
+  initSupabaseClient,
+} from './lib/supabase.ts';
+import {
+  apiRequest,
+  SessionExpiredError,
+  setOnAuthInvalidated,
+} from './lib/api.ts';
 import type {
   AppPage,
   AppPreferences,
@@ -29,6 +37,7 @@ import { JournalView } from './components/JournalView.tsx';
 import { CalendarView } from './components/CalendarView.tsx';
 import { HistoryView } from './components/HistoryView.tsx';
 import { AnalyticsView } from './components/AnalyticsView.tsx';
+import { MansurAiView } from './components/MansurAiView.tsx';
 import { SettingsView } from './components/SettingsView.tsx';
 import { MoreView } from './components/MoreView.tsx';
 import { AccountModal } from './components/AccountModal.tsx';
@@ -41,6 +50,7 @@ const PAGE_ORDER: AppPage[] = [
   'journal',
   'calendar',
   'analytics',
+  'mansur-ai',
   'more',
   'history',
   'settings',
@@ -62,6 +72,10 @@ const PAGE_TITLES: Record<AppPage, { title: string; subtitle: string }> = {
   analytics: {
     title: 'Analytics',
     subtitle: 'Statistik performa harian, mingguan, bulanan, drawdown, pair & sesi',
+  },
+  'mansur-ai': {
+    title: 'MANSUR AI',
+    subtitle: 'Konsultasi & tanya jawab edukasi trading, psikologi, dan manajemen risiko',
   },
   more: {
     title: 'More',
@@ -114,6 +128,7 @@ const pageVariants = {
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
+  const [authNotice, setAuthNotice] = useState('');
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [accounts, setAccounts] = useState<TradingAccount[]>([]);
@@ -157,6 +172,19 @@ export default function App() {
   }, [currentUserId, resetWorkspaceState]);
 
   useEffect(() => {
+    setOnAuthInvalidated((reason) => {
+      activeUserIdRef.current = null;
+      resetWorkspaceState(true);
+      setAuthNotice(reason);
+      setUser(null);
+      setAuthReady(true);
+    });
+    return () => {
+      setOnAuthInvalidated(null);
+    };
+  }, [resetWorkspaceState]);
+
+  useEffect(() => {
     let active = true;
     let subscription: { unsubscribe: () => void } | null = null;
 
@@ -168,23 +196,35 @@ export default function App() {
         return;
       }
 
-      const { data } = await supabase.auth.getSession();
-      if (!active) return;
-      const initialUser = data.session?.user ?? null;
-      activeUserIdRef.current = initialUser?.id ?? null;
-      setUser(initialUser);
-      setAuthReady(true);
-
       const { data: listenerData } = supabase.auth.onAuthStateChange(
         (event, session) => {
+          if (!active) return;
+          if (event === 'INITIAL_SESSION') {
+            return;
+          }
+          if (event === 'SIGNED_OUT') {
+            activeUserIdRef.current = null;
+            resetWorkspaceState(true);
+            setUser(null);
+            setAuthReady(true);
+            return;
+          }
+
           const nextUser = session?.user ?? null;
           const nextUid = nextUser?.id ?? null;
+
+          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            setAuthNotice('');
+          }
+
           if (activeUserIdRef.current !== nextUid) {
             activeUserIdRef.current = nextUid;
             resetWorkspaceState(!nextUser);
           }
+
           setUser(nextUser);
           setAuthReady(true);
+
           if (event === 'PASSWORD_RECOVERY' && nextUser) {
             setActivePage('settings');
             setSettingsSection('security');
@@ -192,6 +232,40 @@ export default function App() {
         }
       );
       subscription = listenerData.subscription;
+
+      // Pulihkan dan validasi/refresh session saat halaman direfresh sebelum memanggil API terproteksi
+      const sessionResult = await getValidSession(false);
+      if (!active) return;
+
+      if (sessionResult.session?.user) {
+        const restoredUser = sessionResult.session.user;
+        activeUserIdRef.current = restoredUser.id;
+        setAuthNotice('');
+        setUser(restoredUser);
+      } else if (sessionResult.invalidSession) {
+        activeUserIdRef.current = null;
+        resetWorkspaceState(true);
+        setAuthNotice(
+          'Sesi login Anda telah berakhir atau tidak valid. Silakan masuk kembali.'
+        );
+        setUser(null);
+      } else if (sessionResult.networkError) {
+        const { data } = await supabase.auth.getSession();
+        if (!active) return;
+        const cachedUser = data.session?.user ?? null;
+        activeUserIdRef.current = cachedUser?.id ?? null;
+        setUser(cachedUser);
+        if (cachedUser) {
+          setDataError(
+            'Koneksi ke server autentikasi terganggu saat memulihkan sesi. Klik Coba Lagi.'
+          );
+        }
+      } else {
+        activeUserIdRef.current = null;
+        setUser(null);
+      }
+
+      setAuthReady(true);
     });
 
     return () => {
@@ -201,11 +275,25 @@ export default function App() {
   }, [resetWorkspaceState]);
 
   const loadWorkspaceProfile = useCallback(async () => {
-    const supabase = getSupabaseClient();
+    const supabase = await initSupabaseClient();
     if (!supabase) return;
-    const { data: sessionData } = await supabase.auth.getSession();
-    const sessionUser = sessionData.session?.user;
-    if (!sessionUser) return;
+    const valid = await getValidSession(false);
+    const sessionUser = valid.session?.user;
+    if (!sessionUser) {
+      if (valid.invalidSession) {
+        activeUserIdRef.current = null;
+        resetWorkspaceState(true);
+        setAuthNotice(
+          'Sesi login Anda telah berakhir atau tidak valid. Silakan masuk kembali.'
+        );
+        setUser(null);
+      } else if (valid.networkError) {
+        setDataError(
+          'Gagal memverifikasi sesi karena gangguan koneksi. Klik Coba Lagi.'
+        );
+      }
+      return;
+    }
     const targetUid = sessionUser.id;
 
     setLoadingData(true);
@@ -252,6 +340,9 @@ export default function App() {
       });
     } catch (err: any) {
       if (activeUserIdRef.current !== targetUid) return;
+      if (err instanceof SessionExpiredError) {
+        return;
+      }
       try {
         const { data: sbProfile } = await supabase
           .from('profiles')
@@ -278,13 +369,13 @@ export default function App() {
         setLoadingData(false);
       }
     }
-  }, []);
+  }, [resetWorkspaceState]);
 
   const loadAccountData = useCallback(async (accountId: number) => {
-    const supabase = getSupabaseClient();
+    const supabase = await initSupabaseClient();
     if (!supabase) return;
-    const { data: sessionData } = await supabase.auth.getSession();
-    const sessionUser = sessionData.session?.user;
+    const valid = await getValidSession(false);
+    const sessionUser = valid.session?.user;
     if (!sessionUser) return;
     const targetUid = sessionUser.id;
     setLoadingData(true);
@@ -302,6 +393,9 @@ export default function App() {
       );
     } catch (err: any) {
       if (activeUserIdRef.current !== targetUid) return;
+      if (err instanceof SessionExpiredError) {
+        return;
+      }
       setDataError(err.message || 'Gagal memuat data transaksi.');
     } finally {
       if (activeUserIdRef.current === targetUid) {
@@ -391,6 +485,29 @@ export default function App() {
   };
 
   const handleRefreshAll = async () => {
+    const forceSessionCheck = Boolean(dataError);
+    setLoadingData(true);
+    setDataError('');
+    const sessionCheck = await getValidSession(forceSessionCheck);
+    if (!sessionCheck.session?.user) {
+      setLoadingData(false);
+      if (sessionCheck.networkError) {
+        setDataError(
+          'Tidak dapat terhubung ke server autentikasi Supabase. Periksa koneksi Anda lalu klik Coba Lagi.'
+        );
+        return;
+      }
+      await clearLocalAuthSession();
+      activeUserIdRef.current = null;
+      resetWorkspaceState(true);
+      setAuthNotice(
+        'Sesi login Anda telah berakhir atau tidak valid. Silakan masuk kembali.'
+      );
+      setUser(null);
+      return;
+    }
+
+    setUser(sessionCheck.session.user);
     await loadWorkspaceProfile();
     if (activeAccountId) {
       await loadAccountData(activeAccountId);
@@ -398,7 +515,8 @@ export default function App() {
   };
 
   const handleSignOut = async () => {
-    const supabase = getSupabaseClient();
+    setAuthNotice('');
+    const supabase = await initSupabaseClient();
     if (supabase) {
       await supabase.auth.signOut();
     }
@@ -416,7 +534,7 @@ export default function App() {
   if (!user) {
     return (
       <MotionConfig reducedMotion="user">
-        <AuthScreen />
+        <AuthScreen initialNotice={authNotice} />
       </MotionConfig>
     );
   }
@@ -573,6 +691,10 @@ export default function App() {
                       initialBalance={activeAccount?.initialBalance ?? 0}
                       currency={currency}
                     />
+                  )}
+
+                  {activePage === 'mansur-ai' && (
+                    <MansurAiView displayName={resolvedDisplayName} />
                   )}
 
                   {activePage === 'more' && (

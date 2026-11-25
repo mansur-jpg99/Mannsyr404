@@ -129,3 +129,46 @@ CREATE POLICY "Users manage own daily reviews"
   TO authenticated
   USING (auth.uid()::text = user_id)
   WITH CHECK (auth.uid()::text = user_id);
+
+-- MANSUR AI — Riwayat Percakapan & Konsultasi Trading Per Pengguna
+CREATE TABLE IF NOT EXISTS public.ai_conversations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL,
+  title TEXT NOT NULL DEFAULT 'Konsultasi Trading',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.ai_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL,
+  conversation_id UUID NOT NULL REFERENCES public.ai_conversations(id) ON DELETE CASCADE,
+  role TEXT NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_ai_conversations_user_updated
+  ON public.ai_conversations(user_id, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ai_messages_conv_created
+  ON public.ai_messages(user_id, conversation_id, created_at ASC);
+
+ALTER TABLE public.ai_conversations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ai_messages ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users manage own AI conversations" ON public.ai_conversations;
+CREATE POLICY "Users manage own AI conversations"
+  ON public.ai_conversations
+  FOR ALL
+  TO authenticated
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users manage own AI messages" ON public.ai_messages;
+CREATE POLICY "Users manage own AI messages"
+  ON public.ai_messages
+  FOR ALL
+  TO authenticated
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+

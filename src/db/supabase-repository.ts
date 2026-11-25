@@ -675,3 +675,222 @@ export async function sbDeleteUserReview(
   }
   return data ? mapReviewRow(data) : null;
 }
+
+function isMissingTableError(error: any): boolean {
+  const code = String(error?.code || '');
+  const message = String(error?.message || '');
+  return (
+    code === 'PGRST205' ||
+    code === '42P01' ||
+    message.includes('Could not find the table') ||
+    message.toLowerCase().includes('does not exist')
+  );
+}
+
+function mapAiConversationRow(row: any) {
+  return {
+    id: String(row.id),
+    userId: String(row.user_id),
+    title: String(row.title ?? 'Konsultasi Trading'),
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+  };
+}
+
+function mapAiMessageRow(row: any) {
+  return {
+    id: String(row.id),
+    userId: String(row.user_id),
+    conversationId: String(row.conversation_id),
+    role: row.role === 'assistant' ? ('assistant' as const) : ('user' as const),
+    content: String(row.content ?? ''),
+    createdAt: String(row.created_at),
+  };
+}
+
+export async function sbGetAiConversations(supabase: SupabaseClient, uid: string) {
+  const { data, error } = await supabase
+    .from('ai_conversations')
+    .select('id, user_id, title, created_at, updated_at')
+    .eq('user_id', uid)
+    .order('updated_at', { ascending: false })
+    .limit(40);
+
+  if (error) {
+    if (isMissingTableError(error)) {
+      return { conversations: [], storageAvailable: false };
+    }
+    handleSupabaseDbError(error, 'Gagal memuat riwayat percakapan MANSUR AI.');
+  }
+  return {
+    conversations: (data || []).map(mapAiConversationRow),
+    storageAvailable: true,
+  };
+}
+
+export async function sbGetAiMessages(
+  supabase: SupabaseClient,
+  uid: string,
+  conversationId: string
+) {
+  const { data: conv, error: convErr } = await supabase
+    .from('ai_conversations')
+    .select('id')
+    .eq('id', conversationId)
+    .eq('user_id', uid)
+    .limit(1)
+    .maybeSingle();
+
+  if (convErr) {
+    if (isMissingTableError(convErr)) {
+      return { messages: [], storageAvailable: false, found: false };
+    }
+    handleSupabaseDbError(convErr, 'Gagal memverifikasi percakapan.');
+  }
+
+  if (!conv) {
+    return { messages: [], storageAvailable: true, found: false };
+  }
+
+  const { data, error } = await supabase
+    .from('ai_messages')
+    .select('id, user_id, conversation_id, role, content, created_at')
+    .eq('user_id', uid)
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    if (isMissingTableError(error)) {
+      return { messages: [], storageAvailable: false, found: true };
+    }
+    handleSupabaseDbError(error, 'Gagal memuat pesan percakapan.');
+  }
+
+  return {
+    messages: (data || []).map(mapAiMessageRow),
+    storageAvailable: true,
+    found: true,
+  };
+}
+
+export async function sbCreateAiConversation(
+  supabase: SupabaseClient,
+  uid: string,
+  title: string
+) {
+  const nowIso = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('ai_conversations')
+    .insert({
+      user_id: uid,
+      title,
+      created_at: nowIso,
+      updated_at: nowIso,
+    })
+    .select('id, user_id, title, created_at, updated_at')
+    .single();
+
+  if (error) {
+    if (isMissingTableError(error)) {
+      return { conversation: null, storageAvailable: false };
+    }
+    handleSupabaseDbError(error, 'Gagal membuat percakapan baru.');
+  }
+  return {
+    conversation: mapAiConversationRow(data),
+    storageAvailable: true,
+  };
+}
+
+export async function sbAppendAiMessages(
+  supabase: SupabaseClient,
+  uid: string,
+  conversationId: string,
+  userContent: string,
+  assistantContent: string
+) {
+  const nowMs = Date.now();
+  const userIso = new Date(nowMs).toISOString();
+  const assistantIso = new Date(nowMs + 1).toISOString();
+
+  const { data: inserted, error: insertErr } = await supabase
+    .from('ai_messages')
+    .insert([
+      {
+        user_id: uid,
+        conversation_id: conversationId,
+        role: 'user',
+        content: userContent,
+        created_at: userIso,
+      },
+      {
+        user_id: uid,
+        conversation_id: conversationId,
+        role: 'assistant',
+        content: assistantContent,
+        created_at: assistantIso,
+      },
+    ])
+    .select('id, user_id, conversation_id, role, content, created_at');
+
+  if (insertErr) {
+    if (isMissingTableError(insertErr)) {
+      return { messages: [], storageAvailable: false };
+    }
+    handleSupabaseDbError(insertErr, 'Gagal menyimpan pesan percakapan.');
+  }
+
+  await supabase
+    .from('ai_conversations')
+    .update({ updated_at: assistantIso })
+    .eq('id', conversationId)
+    .eq('user_id', uid);
+
+  const sorted = (inserted || []).map(mapAiMessageRow).sort((a, b) => {
+    const timeDiff =
+      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    if (timeDiff !== 0) return timeDiff;
+    return a.role === 'user' && b.role === 'assistant' ? -1 : 1;
+  });
+
+  return {
+    messages: sorted,
+    storageAvailable: true,
+  };
+}
+
+export async function sbDeleteAiConversation(
+  supabase: SupabaseClient,
+  uid: string,
+  conversationId: string
+) {
+  const { error: msgErr } = await supabase
+    .from('ai_messages')
+    .delete()
+    .eq('conversation_id', conversationId)
+    .eq('user_id', uid);
+
+  if (msgErr && !isMissingTableError(msgErr)) {
+    handleSupabaseDbError(msgErr, 'Gagal menghapus pesan percakapan.');
+  }
+
+  const { data, error } = await supabase
+    .from('ai_conversations')
+    .delete()
+    .eq('id', conversationId)
+    .eq('user_id', uid)
+    .select('id, user_id, title, created_at, updated_at')
+    .maybeSingle();
+
+  if (error) {
+    if (isMissingTableError(error)) {
+      return { deleted: null, storageAvailable: false };
+    }
+    handleSupabaseDbError(error, 'Gagal menghapus percakapan.');
+  }
+  return {
+    deleted: data ? mapAiConversationRow(data) : null,
+    storageAvailable: true,
+  };
+}
+

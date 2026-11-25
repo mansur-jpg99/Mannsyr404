@@ -123,8 +123,26 @@ export const requireAuth = async (
   try {
     const { data, error } = await supabase.auth.getUser(token);
     if (error || !data.user) {
+      const errName = String((error as any)?.name || '');
+      const errStatus =
+        typeof (error as any)?.status === 'number' ? (error as any).status : 0;
+      const errMsg = String((error as any)?.message || '').toLowerCase();
+
+      if (
+        errName === 'AuthRetryableFetchError' ||
+        errStatus >= 500 ||
+        errMsg.includes('failed to fetch') ||
+        errMsg.includes('network') ||
+        errMsg.includes('timeout')
+      ) {
+        return res.status(502).json({
+          error: 'Gagal terhubung ke layanan autentikasi Supabase.',
+        });
+      }
+
       return res.status(401).json({
         error: 'Token autentikasi Supabase tidak valid atau kedaluwarsa.',
+        code: 'AUTH_TOKEN_INVALID',
       });
     }
 

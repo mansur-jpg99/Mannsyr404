@@ -106,7 +106,11 @@ function translateSupabaseAuthError(message: string): string {
   return message || 'Gagal memproses permintaan autentikasi. Silakan coba lagi.';
 }
 
-export function AuthScreen() {
+interface AuthScreenProps {
+  initialNotice?: string;
+}
+
+export function AuthScreen({ initialNotice = '' }: AuthScreenProps) {
   const initialRemember = readStoredRememberPreference();
 
   const [mode, setMode] = useState<'login' | 'register'>('login');
@@ -118,7 +122,7 @@ export function AuthScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState(initialNotice);
   const [successMsg, setSuccessMsg] = useState('');
   const [missingConfig, setMissingConfig] = useState<string[]>([]);
   const [checkingConfig, setCheckingConfig] = useState(true);
@@ -146,6 +150,12 @@ export function AuthScreen() {
       hashParams.get('error');
     if (urlErrorDesc) {
       setErrorMsg(translateSupabaseAuthError(urlErrorDesc));
+      try {
+        const cleanUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+      } catch {
+        // Abaikan jika history API tidak tersedia
+      }
     }
 
     initSupabaseClient()
@@ -162,6 +172,12 @@ export function AuthScreen() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (initialNotice) {
+      setErrorMsg(initialNotice);
+    }
+  }, [initialNotice]);
 
   useEffect(() => {
     if (!forgotOpen) return;

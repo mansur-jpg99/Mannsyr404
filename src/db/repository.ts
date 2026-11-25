@@ -2,6 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import { db, isSqlDatabaseConfigured } from './index.ts';
 import {
+  aiConversations,
+  aiMessages,
   dailyReviews,
   profiles,
   tradeScreenshots,
@@ -9,14 +11,19 @@ import {
   tradingAccounts,
 } from './schema.ts';
 import {
+  sbAppendAiMessages,
+  sbCreateAiConversation,
   sbCreateTradeScreenshot,
   sbCreateUserAccount,
   sbCreateUserReview,
   sbCreateUserTrade,
+  sbDeleteAiConversation,
   sbDeleteTradeScreenshot,
   sbDeleteUserAccount,
   sbDeleteUserReview,
   sbDeleteUserTrade,
+  sbGetAiConversations,
+  sbGetAiMessages,
   sbGetTradeScreenshots,
   sbGetUserAccounts,
   sbGetUserProfile,
@@ -617,3 +624,209 @@ export async function deleteUserReview(
     throw new Error('Gagal menghapus evaluasi harian.', { cause: error });
   }
 }
+
+function isDrizzleMissingTableError(error: any): boolean {
+  const code = String(error?.code || error?.cause?.code || '');
+  const message = String(error?.message || error?.cause?.message || '').toLowerCase();
+  return code === '42P01' || message.includes('does not exist');
+}
+
+export async function getAiConversations(uid: string, supabase?: SupabaseClient) {
+  if (supabase || !isSqlDatabaseConfigured()) {
+    return sbGetAiConversations(requireSupabaseClient(supabase), uid);
+  }
+  try {
+    const rows = await db
+      .select()
+      .from(aiConversations)
+      .where(eq(aiConversations.userId, uid))
+      .orderBy(desc(aiConversations.updatedAt));
+    return {
+      conversations: rows.map((r) => ({
+        ...r,
+        id: String(r.id),
+        userId: String(r.userId),
+        createdAt: r.createdAt.toISOString(),
+        updatedAt: r.updatedAt.toISOString(),
+      })),
+      storageAvailable: true,
+    };
+  } catch (error: any) {
+    if (isDrizzleMissingTableError(error)) {
+      return { conversations: [], storageAvailable: false };
+    }
+    console.error('getAiConversations failed:', error);
+    throw new Error('Gagal memuat riwayat percakapan MANSUR AI.', { cause: error });
+  }
+}
+
+export async function getAiMessages(
+  uid: string,
+  conversationId: string,
+  supabase?: SupabaseClient
+) {
+  if (supabase || !isSqlDatabaseConfigured()) {
+    return sbGetAiMessages(requireSupabaseClient(supabase), uid, conversationId);
+  }
+  try {
+    const owned = await db
+      .select()
+      .from(aiConversations)
+      .where(and(eq(aiConversations.id, conversationId), eq(aiConversations.userId, uid)))
+      .limit(1);
+    if (!owned[0]) {
+      return { messages: [], storageAvailable: true, found: false };
+    }
+    const rows = await db
+      .select()
+      .from(aiMessages)
+      .where(and(eq(aiMessages.userId, uid), eq(aiMessages.conversationId, conversationId)))
+      .orderBy(aiMessages.createdAt);
+    return {
+      messages: rows.map((r) => ({
+        ...r,
+        id: String(r.id),
+        userId: String(r.userId),
+        conversationId: String(r.conversationId),
+        role: r.role === 'assistant' ? ('assistant' as const) : ('user' as const),
+        createdAt: r.createdAt.toISOString(),
+      })),
+      storageAvailable: true,
+      found: true,
+    };
+  } catch (error: any) {
+    if (isDrizzleMissingTableError(error)) {
+      return { messages: [], storageAvailable: false, found: false };
+    }
+    console.error('getAiMessages failed:', error);
+    throw new Error('Gagal memuat pesan percakapan.', { cause: error });
+  }
+}
+
+export async function createAiConversation(
+  uid: string,
+  title: string,
+  supabase?: SupabaseClient
+) {
+  if (supabase || !isSqlDatabaseConfigured()) {
+    return sbCreateAiConversation(requireSupabaseClient(supabase), uid, title);
+  }
+  try {
+    const rows = await db
+      .insert(aiConversations)
+      .values({ userId: uid, title })
+      .returning();
+    return {
+      conversation: {
+        ...rows[0],
+        id: String(rows[0].id),
+        userId: String(rows[0].userId),
+        createdAt: rows[0].createdAt.toISOString(),
+        updatedAt: rows[0].updatedAt.toISOString(),
+      },
+      storageAvailable: true,
+    };
+  } catch (error: any) {
+    if (isDrizzleMissingTableError(error)) {
+      return { conversation: null, storageAvailable: false };
+    }
+    console.error('createAiConversation failed:', error);
+    throw new Error('Gagal membuat percakapan baru.', { cause: error });
+  }
+}
+
+export async function appendAiMessages(
+  uid: string,
+  conversationId: string,
+  userContent: string,
+  assistantContent: string,
+  supabase?: SupabaseClient
+) {
+  if (supabase || !isSqlDatabaseConfigured()) {
+    return sbAppendAiMessages(
+      requireSupabaseClient(supabase),
+      uid,
+      conversationId,
+      userContent,
+      assistantContent
+    );
+  }
+  try {
+    const nowMs = Date.now();
+    const inserted = await db
+      .insert(aiMessages)
+      .values([
+        {
+          userId: uid,
+          conversationId,
+          role: 'user',
+          content: userContent,
+          createdAt: new Date(nowMs),
+        },
+        {
+          userId: uid,
+          conversationId,
+          role: 'assistant',
+          content: assistantContent,
+          createdAt: new Date(nowMs + 1),
+        },
+      ])
+      .returning();
+    await db
+      .update(aiConversations)
+      .set({ updatedAt: new Date(nowMs + 1) })
+      .where(and(eq(aiConversations.id, conversationId), eq(aiConversations.userId, uid)));
+    return {
+      messages: inserted.map((r) => ({
+        ...r,
+        id: String(r.id),
+        userId: String(r.userId),
+        conversationId: String(r.conversationId),
+        role: r.role === 'assistant' ? ('assistant' as const) : ('user' as const),
+        createdAt: r.createdAt.toISOString(),
+      })),
+      storageAvailable: true,
+    };
+  } catch (error: any) {
+    if (isDrizzleMissingTableError(error)) {
+      return { messages: [], storageAvailable: false };
+    }
+    console.error('appendAiMessages failed:', error);
+    throw new Error('Gagal menyimpan pesan percakapan.', { cause: error });
+  }
+}
+
+export async function deleteAiConversation(
+  uid: string,
+  conversationId: string,
+  supabase?: SupabaseClient
+) {
+  if (supabase || !isSqlDatabaseConfigured()) {
+    return sbDeleteAiConversation(requireSupabaseClient(supabase), uid, conversationId);
+  }
+  try {
+    const rows = await db
+      .delete(aiConversations)
+      .where(and(eq(aiConversations.id, conversationId), eq(aiConversations.userId, uid)))
+      .returning();
+    return {
+      deleted: rows[0]
+        ? {
+            ...rows[0],
+            id: String(rows[0].id),
+            userId: String(rows[0].userId),
+            createdAt: rows[0].createdAt.toISOString(),
+            updatedAt: rows[0].updatedAt.toISOString(),
+          }
+        : null,
+      storageAvailable: true,
+    };
+  } catch (error: any) {
+    if (isDrizzleMissingTableError(error)) {
+      return { deleted: null, storageAvailable: false };
+    }
+    console.error('deleteAiConversation failed:', error);
+    throw new Error('Gagal menghapus percakapan.', { cause: error });
+  }
+}
+

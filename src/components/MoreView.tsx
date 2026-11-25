@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  BotMessageSquare,
   ChevronRight,
   ClipboardCheck,
   Coins,
@@ -166,6 +167,12 @@ export function MoreView({
           Riwayat &amp; Evaluasi
         </div>
         {[
+          {
+            title: 'MANSUR AI — Konsultasi Trading',
+            subtitle: 'Tanya jawab strategi, psikologi & manajemen risiko trading',
+            icon: BotMessageSquare,
+            action: () => onSelectPage('mansur-ai'),
+          },
           {
             title: 'Riwayat Transaksi',
             subtitle: 'Telusuri seluruh eksekusi lengkap beserta filter status',

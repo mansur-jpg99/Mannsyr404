@@ -6,6 +6,7 @@ import {
   serial,
   text,
   timestamp,
+  uuid,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -109,9 +110,40 @@ export const tradeScreenshotsRelations = relations(tradeScreenshots, ({ one }) =
   }),
 }));
 
+export const aiConversations = pgTable('ai_conversations', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  title: text('title').notNull().default('Konsultasi Trading'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const aiMessages = pgTable('ai_messages', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  conversationId: uuid('conversation_id')
+    .references(() => aiConversations.id, { onDelete: 'cascade' })
+    .notNull(),
+  role: text('role').notNull(), // 'user' | 'assistant'
+  content: text('content').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
 export const dailyReviewsRelations = relations(dailyReviews, ({ one }) => ({
   account: one(tradingAccounts, {
     fields: [dailyReviews.accountId],
     references: [tradingAccounts.id],
   }),
 }));
+
+export const aiConversationsRelations = relations(aiConversations, ({ many }) => ({
+  messages: many(aiMessages),
+}));
+
+export const aiMessagesRelations = relations(aiMessages, ({ one }) => ({
+  conversation: one(aiConversations, {
+    fields: [aiMessages.conversationId],
+    references: [aiConversations.id],
+  }),
+}));
+

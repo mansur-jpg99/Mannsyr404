@@ -1,6 +1,7 @@
 import {
   BarChart3,
   BookOpen,
+  BotMessageSquare,
   CalendarDays,
   ChevronDown,
   ClipboardCheck,
@@ -39,6 +40,7 @@ const NAV_ITEMS: Array<{ id: AppPage; label: string; icon: typeof LayoutDashboar
   { id: 'journal', label: 'Jurnal Trading', icon: BookOpen },
   { id: 'calendar', label: 'Kalender', icon: CalendarDays },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+  { id: 'mansur-ai', label: 'MANSUR AI', icon: BotMessageSquare },
   { id: 'history', label: 'Riwayat', icon: History },
   { id: 'settings', label: 'Pengaturan', icon: Settings },
 ];

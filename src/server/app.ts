@@ -11,14 +11,19 @@ import {
   type AuthRequest,
 } from '../middleware/auth.ts';
 import {
+  appendAiMessages,
+  createAiConversation,
   createTradeScreenshot,
   createUserAccount,
   createUserReview,
   createUserTrade,
+  deleteAiConversation,
   deleteTradeScreenshot,
   deleteUserAccount,
   deleteUserReview,
   deleteUserTrade,
+  getAiConversations,
+  getAiMessages,
   getTradeScreenshots,
   getUserAccounts,
   getUserProfile,
@@ -29,6 +34,13 @@ import {
   updateUserReview,
   updateUserTrade,
 } from '../db/repository.ts';
+import {
+  askMansurAi,
+  buildConversationTitle,
+  MansurAiConfigError,
+  MansurAiUpstreamError,
+  type MansurAiHistoryItem,
+} from './mansur-ai.ts';
 
 dotenv.config();
 
@@ -570,6 +582,215 @@ export function registerApiRoutes(app: Express) {
       res
         .status(500)
         .json({ error: error.message || 'Gagal menghapus evaluasi harian.' });
+    }
+  });
+
+  const parseConversationId = (raw: unknown): string | null => {
+    if (raw === undefined || raw === null) return null;
+    const trimmed = String(raw).trim();
+    if (!trimmed || !/^[0-9a-zA-Z_-]{1,64}$/.test(trimmed)) {
+      return null;
+    }
+    return trimmed;
+  };
+
+  app.get('/api/mansur-ai/conversations', requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const result = await getAiConversations(req.user!.uid, req.supabaseClient);
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({
+        error: error.message || 'Gagal memuat riwayat percakapan MANSUR AI.',
+      });
+    }
+  });
+
+  app.get(
+    '/api/mansur-ai/conversations/:id/messages',
+    requireAuth,
+    async (req: AuthRequest, res) => {
+      try {
+        const conversationId = parseConversationId(req.params.id);
+        if (!conversationId) {
+          return res.status(400).json({ error: 'ID percakapan tidak valid.' });
+        }
+        const result = await getAiMessages(
+          req.user!.uid,
+          conversationId,
+          req.supabaseClient
+        );
+        if (result.storageAvailable && !result.found) {
+          return res.status(404).json({ error: 'Percakapan tidak ditemukan.' });
+        }
+        res.json(result);
+      } catch (error: any) {
+        res.status(500).json({
+          error: error.message || 'Gagal memuat pesan percakapan.',
+        });
+      }
+    }
+  );
+
+  app.delete(
+    '/api/mansur-ai/conversations/:id',
+    requireAuth,
+    async (req: AuthRequest, res) => {
+      try {
+        const conversationId = parseConversationId(req.params.id);
+        if (!conversationId) {
+          return res.status(400).json({ error: 'ID percakapan tidak valid.' });
+        }
+        const result = await deleteAiConversation(
+          req.user!.uid,
+          conversationId,
+          req.supabaseClient
+        );
+        if (result.storageAvailable && !result.deleted) {
+          return res.status(404).json({ error: 'Percakapan tidak ditemukan.' });
+        }
+        res.json({ deletedId: conversationId, storageAvailable: result.storageAvailable });
+      } catch (error: any) {
+        res.status(500).json({
+          error: error.message || 'Gagal menghapus percakapan.',
+        });
+      }
+    }
+  );
+
+  app.post('/api/mansur-ai/chat', requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const uid = req.user!.uid;
+      const sb = req.supabaseClient;
+      const rawMessage =
+        typeof req.body?.message === 'string' ? req.body.message.trim() : '';
+
+      if (!rawMessage) {
+        return res
+          .status(400)
+          .json({ error: 'Pertanyaan tidak boleh kosong.' });
+      }
+      if (rawMessage.length > 4000) {
+        return res.status(400).json({
+          error: 'Pesan terlalu panjang. Maksimal 4.000 karakter per pertanyaan.',
+        });
+      }
+
+      const rawConvId = req.body?.conversationId;
+      const hasRequestedConvId =
+        rawConvId !== undefined && rawConvId !== null && String(rawConvId).trim() !== '';
+      const requestedConvId = hasRequestedConvId ? parseConversationId(rawConvId) : null;
+
+      if (hasRequestedConvId && !requestedConvId) {
+        return res.status(400).json({ error: 'ID percakapan tidak valid.' });
+      }
+
+      const fallbackHistory: MansurAiHistoryItem[] = Array.isArray(
+        req.body?.fallbackHistory
+      )
+        ? req.body.fallbackHistory
+            .filter(
+              (m: any) =>
+                m &&
+                (m.role === 'user' || m.role === 'assistant') &&
+                typeof m.content === 'string'
+            )
+            .slice(-18)
+            .map((m: any) => ({
+              role: m.role,
+              content: m.content.slice(0, 4000),
+            }))
+        : [];
+
+      let activeConversationId: string | null = requestedConvId;
+      let history: MansurAiHistoryItem[] = fallbackHistory;
+      let storageAvailable = true;
+
+      if (requestedConvId) {
+        const loaded = await getAiMessages(uid, requestedConvId, sb);
+        storageAvailable = loaded.storageAvailable;
+        if (!loaded.found && loaded.storageAvailable) {
+          return res.status(404).json({ error: 'Percakapan tidak ditemukan.' });
+        }
+        if (loaded.storageAvailable && loaded.messages.length > 0) {
+          history = loaded.messages.map((m) => ({
+            role: m.role,
+            content: m.content,
+          }));
+        }
+      }
+
+      const answer = await askMansurAi({
+        message: rawMessage,
+        history,
+      });
+
+      let conversation = null;
+      let savedMessages: any[] = [];
+      let persisted = false;
+
+      if (!activeConversationId) {
+        const created = await createAiConversation(
+          uid,
+          buildConversationTitle(rawMessage),
+          sb
+        );
+        storageAvailable = created.storageAvailable;
+        conversation = created.conversation;
+        activeConversationId = created.conversation?.id ?? null;
+      }
+
+      if (storageAvailable && activeConversationId) {
+        const appended = await appendAiMessages(
+          uid,
+          activeConversationId,
+          rawMessage,
+          answer,
+          sb
+        );
+        storageAvailable = appended.storageAvailable;
+        savedMessages = appended.messages;
+        persisted = appended.storageAvailable;
+      }
+
+      const nowMs = Date.now();
+      const userMessage = savedMessages.find((m) => m.role === 'user') || {
+        id: `local-user-${nowMs}`,
+        userId: uid,
+        conversationId: activeConversationId || '',
+        role: 'user' as const,
+        content: rawMessage,
+        createdAt: new Date(nowMs).toISOString(),
+      };
+      const assistantMessage = savedMessages.find(
+        (m) => m.role === 'assistant'
+      ) || {
+        id: `local-assistant-${nowMs + 1}`,
+        userId: uid,
+        conversationId: activeConversationId || '',
+        role: 'assistant' as const,
+        content: answer,
+        createdAt: new Date(nowMs + 1).toISOString(),
+      };
+
+      res.json({
+        conversation,
+        conversationId: activeConversationId,
+        userMessage,
+        assistantMessage,
+        persisted,
+        storageAvailable,
+      });
+    } catch (error: any) {
+      if (error instanceof MansurAiConfigError) {
+        return res.status(503).json({ error: error.message });
+      }
+      if (error instanceof MansurAiUpstreamError) {
+        return res.status(error.status).json({ error: error.message });
+      }
+      console.error('MANSUR AI chat error:', error);
+      res.status(500).json({
+        error: error?.message || 'Gagal memproses konsultasi MANSUR AI.',
+      });
     }
   });
 

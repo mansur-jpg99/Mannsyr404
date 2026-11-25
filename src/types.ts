@@ -8,6 +8,7 @@ export type AppPage =
   | 'journal'
   | 'calendar'
   | 'analytics'
+  | 'mansur-ai'
   | 'more'
   | 'history'
   | 'settings';
@@ -98,3 +99,21 @@ export interface DailyReview {
   progressNotes: string;
   createdAt: string;
 }
+
+export interface AiConversation {
+  id: string;
+  userId: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AiMessage {
+  id: string;
+  userId: string;
+  conversationId: string;
+  role: 'user' | 'assistant';
+  content: string;
+  createdAt: string;
+}
+

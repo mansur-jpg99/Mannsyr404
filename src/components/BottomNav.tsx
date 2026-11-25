@@ -1,6 +1,7 @@
 import {
   BarChart3,
   BookOpen,
+  BotMessageSquare,
   CalendarDays,
   LayoutDashboard,
   LayoutGrid,
@@ -22,6 +23,7 @@ const BOTTOM_NAV_ITEMS: Array<{
   { id: 'journal', label: 'Journal', icon: BookOpen },
   { id: 'calendar', label: 'Calendar', icon: CalendarDays },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+  { id: 'mansur-ai', label: 'Mansur AI', icon: BotMessageSquare },
   { id: 'more', label: 'More', icon: LayoutGrid },
 ];
 
@@ -29,9 +31,9 @@ export function BottomNav({ activePage, onSelectPage }: BottomNavProps) {
   return (
     <nav
       aria-label="Navigasi utama"
-      className="lg:hidden fixed bottom-2.5 left-3 right-3 z-40 max-w-md mx-auto glass-dock rounded-[26px] px-2 pt-1.5 pb-safe"
+      className="lg:hidden fixed bottom-2.5 left-3 right-3 z-40 max-w-md mx-auto glass-dock rounded-[26px] px-1.5 pt-1.5 pb-safe"
     >
-      <div className="grid grid-cols-5 items-center gap-1">
+      <div className="grid grid-cols-6 items-center gap-0.5">
         {BOTTOM_NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isMoreBranch =
@@ -68,7 +70,7 @@ export function BottomNav({ activePage, onSelectPage }: BottomNavProps) {
               </span>
 
               <span
-                className={`relative z-10 mt-0.5 text-[10px] leading-tight tracking-tight whitespace-nowrap truncate max-w-full transition-colors duration-150 ${
+                className={`relative z-10 mt-0.5 text-[9.5px] sm:text-[10px] leading-tight tracking-tight whitespace-nowrap truncate max-w-full transition-colors duration-150 ${
                   isActive
                     ? 'font-semibold text-[#0D7A72]'
                     : 'font-medium text-[#52625D]'

@@ -1,55 +1,129 @@
-import { initSupabaseClient } from './supabase.ts';
+import {
+  clearLocalAuthSession,
+  getValidSession,
+  initSupabaseClient,
+} from './supabase.ts';
 
-async function getAuthHeaders(): Promise<HeadersInit> {
+export class SessionExpiredError extends Error {
+  constructor(
+    message = 'Sesi login Anda telah berakhir atau tidak valid. Silakan masuk kembali.'
+  ) {
+    super(message);
+    this.name = 'SessionExpiredError';
+  }
+}
+
+type AuthInvalidatedListener = (reason: string) => void;
+let onAuthInvalidatedListener: AuthInvalidatedListener | null = null;
+
+export function setOnAuthInvalidated(
+  listener: AuthInvalidatedListener | null
+): void {
+  onAuthInvalidatedListener = listener;
+}
+
+function notifyAuthInvalidated(reason: string): void {
+  if (onAuthInvalidatedListener) {
+    onAuthInvalidatedListener(reason);
+  }
+}
+
+async function resolveBearerToken(forceRefresh = false): Promise<string> {
   const supabase = await initSupabaseClient();
   if (!supabase) {
     throw new Error('Konfigurasi Supabase belum lengkap.');
   }
-  const { data } = await supabase.auth.getSession();
-  const accessToken = data.session?.access_token;
-  if (!accessToken) {
-    throw new Error('Pengguna belum masuk.');
+
+  const result = await getValidSession(forceRefresh);
+
+  if (result.session?.access_token) {
+    return result.session.access_token;
   }
-  return {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${accessToken}`,
-  };
+
+  if (result.networkError) {
+    throw new Error(
+      'Tidak dapat memperbarui sesi karena gangguan jaringan. Periksa koneksi internet Anda lalu klik Coba Lagi.'
+    );
+  }
+
+  const message =
+    'Sesi login Anda telah berakhir atau tidak valid. Silakan masuk kembali.';
+  await clearLocalAuthSession();
+  notifyAuthInvalidated(message);
+  throw new SessionExpiredError(message);
+}
+
+async function parseJsonSafe(res: Response): Promise<any> {
+  const contentType = res.headers.get('content-type') || '';
+  const rawText = await res.text();
+  if (!rawText) return null;
+
+  if (
+    contentType.includes('application/json') ||
+    rawText.trim().startsWith('{') ||
+    rawText.trim().startsWith('[')
+  ) {
+    try {
+      return JSON.parse(rawText);
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+async function performAuthorizedFetch(
+  path: string,
+  token: string,
+  options?: RequestInit
+): Promise<Response> {
+  try {
+    return await fetch(path, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(options?.headers || {}),
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  } catch {
+    throw new Error(
+      'Tidak dapat terhubung ke server API. Periksa koneksi internet Anda.'
+    );
+  }
 }
 
 export async function apiRequest<T>(
   path: string,
   options?: RequestInit
 ): Promise<T> {
-  const headers = await getAuthHeaders();
-  let res: Response;
-  try {
-    res = await fetch(path, {
-      ...options,
-      headers: {
-        ...headers,
-        ...(options?.headers || {}),
-      },
-    });
-  } catch {
-    throw new Error('Tidak dapat terhubung ke server API. Periksa koneksi internet Anda.');
+  let token = await resolveBearerToken(false);
+  let res = await performAuthorizedFetch(path, token, options);
+
+  // Jika server menolak dengan 401 (mis. token baru saja kedaluwarsa/dicabut), coba refresh token 1x lalu ulangi permintaan
+  if (res.status === 401) {
+    const refreshed = await getValidSession(true);
+    if (
+      refreshed.session?.access_token &&
+      refreshed.session.access_token !== token
+    ) {
+      token = refreshed.session.access_token;
+      res = await performAuthorizedFetch(path, token, options);
+    } else if (refreshed.networkError) {
+      throw new Error(
+        'Tidak dapat memverifikasi ulang sesi karena gangguan jaringan. Klik Coba Lagi.'
+      );
+    }
   }
 
-  const contentType = res.headers.get('content-type') || '';
-  const rawText = await res.text();
-  let parsedJson: any = null;
+  const parsedJson = await parseJsonSafe(res);
 
-  if (rawText && contentType.includes('application/json')) {
-    try {
-      parsedJson = JSON.parse(rawText);
-    } catch {
-      parsedJson = null;
-    }
-  } else if (rawText && (rawText.trim().startsWith('{') || rawText.trim().startsWith('['))) {
-    try {
-      parsedJson = JSON.parse(rawText);
-    } catch {
-      parsedJson = null;
-    }
+  if (res.status === 401) {
+    const message =
+      'Sesi login Anda telah berakhir atau tidak valid. Silakan masuk kembali.';
+    await clearLocalAuthSession();
+    notifyAuthInvalidated(message);
+    throw new SessionExpiredError(message);
   }
 
   if (!res.ok) {
